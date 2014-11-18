@@ -1,0 +1,30 @@
+<html>
+	<head>
+		<title>Arduino LED Test</title>
+		
+		<script type="text/javascript">
+			function forward() {
+				$('#content').load('/arduino/moveForward');
+			}
+			function stop() {
+				$('#content').load('/arduino/stop');
+			}
+			function reverse() {
+				$('#content').load('/arduino/moveBackwards');
+			}
+		</script>
+	</head>
+
+	<body>
+		<p>
+			<h3>Arduino Motor Test<h3>
+			<span id="content"></span> <br>
+			<button onclick="forward();">Forward</button> <br>
+			<button onclick="stop();">Stop</button> <br>
+			<button onclick="reverse();">Reverse</button> <br>
+		</p>
+
+		<script src=zepto.min.js></script>
+	</body>
+
+</html>
