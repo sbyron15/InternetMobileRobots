@@ -16,13 +16,18 @@ int B2M2 = 10;
 
 int speed = 170;
 
-int lastCommand = 0;
+String lastCommand = "";
 
-const int FORWARD = 1;
-const int BACKWARD = 2;
-const int LEFT = 3;
-const int RIGHT = 4;
-const int STOP = 5;
+const String FORWARD = "moveForward";
+const String BACKWARD = "moveBackward";
+const String LEFT = "leftTurn";
+const String RIGHT = "rightTurn";
+const String STOP = "stop";
+const String SPEED_UP = "speedUp";
+const String SPEED_DOWN = "speedDown";
+const String SLOW = "setSlowSpeed";
+const String MEDIUM = "setMediumSpeed";
+const String FAST = "setFaseSpeed";
  
 void setup() 
 { 
@@ -42,8 +47,6 @@ void setup()
   
     digitalWrite(B2E1, HIGH);
     digitalWrite(B2E2, HIGH);
-    
-    //setSpeed(speed);
 } 
 
 void backward() {
@@ -129,31 +132,23 @@ void loop()
     command.trim();        //kill whitespace
     Serial.println(command);
     
-    if (command == "moveForward") {
+    if (command == FORWARD) {
       forward();
-      client.print("FORWARD");
+      client.print(command);
       
-    } else if (command == "moveBackward") {
+    } else if (command == BACKWARD) {
       backward();
-      client.print("REVERSE");
+      client.print(command);
       
-    } else if (command == "stop") {
-      //allStop();
-      //client.print("STOP");
-      speed = 0;
-      setSpeed();
-      client.print("SPEED = ");
-      client.print(speed);
-      
-    } else if (command == "leftTurn") {
+    } else if (command == LEFT) {
       turnLeft();
-      client.print("LEFT TURN");
+      client.print(command);
       
-    } else if (command == "rightTurn") {
+    } else if (command == RIGHT) {
       turnRight();
-      client.print("RIGHT TURN");
+      client.print(command);
       
-    } else if (command == "speedUp") {
+    } else if (command == SPEED_UP) {
       speed = speed + 10;
       if (speed > 255) {
         speed = 255;
@@ -162,7 +157,7 @@ void loop()
       client.print("SPEED = ");
       client.print(speed);
       
-    } else if (command == "speedDown") {
+    } else if (command == SPEED_DOWN) {
       speed = speed - 10;
       if (speed < 0) {
         speed = 0;
@@ -171,23 +166,29 @@ void loop()
       client.print("SPEED = ");
       client.print(speed);
     
-    } else if (command == "setFastSpeed") {
+    } else if (command == FAST) {
         speed = 255;
         setSpeed();
         client.print("SPEED = ");
         client.print(speed);
         
-    } else if (command == "setSlowSpeed") {
+    } else if (command == SLOW) {
         speed = 150;
         setSpeed();
         client.print("SPEED = ");
         client.print(speed);
       
-    } else if (command == "setMediumSpeed") {
+    } else if (command == MEDIUM) {
         speed = 200;
         setSpeed();
         client.print("SPEED = ");
         client.print(speed);
+        
+    } else if (command == STOP) {
+      speed = 0;
+      setSpeed();
+      client.print("SPEED = ");
+      client.print(speed);
     }
     
     client.stop();
