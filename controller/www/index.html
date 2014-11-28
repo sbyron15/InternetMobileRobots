@@ -2,209 +2,63 @@
 <html>
     <head>
         <script src='zepto.min.js' type='text/javascript'></script>
-         <script type='text/javascript'>
-            $(document).ready(function() {   
-    
-                $(document).on('keydown', function(e) { 
-                    $('#msg').text(e.keyCode + ' key pressed'); 
-                    
-                    if (isLeft(e.keyCode)) setOn('triangle-left');
-                    else if (isUp(e.keyCode)) setOn('triangle-up');
-                    else if (isRight(e.keyCode)) setOn('triangle-right');
-                    else if (isDown(e.keyCode)) setOn('triangle-down');
-                }); 
-                $(document).on('keyup', function(e) { 
-                    $('#msg').text(e.keyCode + ' key released');
-                    
-                    if (isLeft(e.keyCode)) setOff('triangle-left');
-                    else if (isUp(e.keyCode)) setOff('triangle-up');
-                    else if (isRight(e.keyCode)) setOff('triangle-right');
-                    else if (isDown(e.keyCode)) setOff('triangle-down');
-                });    
-                
-                $('#speed').on('change', function(){
-                    $('#msg').text('Speed set to ' + $(this).val()); 
-                    switch ($(this).val()){
-                        case '0': 
-                            $('#msg').load('/arduino/stop');
-                            break;
-                        case '1':
-                            $('#msg').load('/arduino/setSlowSpeed');
-                            break;
-                        case '2':
-                            $('#msg').load('/arduino/setMediumSpeed');
-                            break;
-                        case '3':
-                            $('#msg').load('/arduino/setFastSpeed');
-                            break;
-                        default:
-                            $('#msg').text('ERROR'); 
-                    }
-                });
+        <script src='robotWeb.js' type='text/javascript'></script>
 
-                $('.arrow-box').on('click', function(){
-                    var id = $(this).children('.triangle').attr('id');
-                    
-                    // Visual update
-                    isOn(id) ? setOff(id) : setOn(id);
-
-                    // Send proper command
-                    if (isOn('triangle-up')){
-                        $('#msg').load('/arduino/moveForward');
-                    }
-                    else if (isOn('triangle-down')){
-                        $('#msg').load('/arduino/moveBackward');
-                    }
-                    else if (isOn('triangle-left')){
-                        $('#msg').load('/arduino/leftTurn');
-                    }
-                    else if (isOn('triangle-right')){
-                        $('#msg').load('/arduino/rightTurn');
-                    }
-                });
-                
-                // Visual only
-                function setOn(id){
-                    setOff('triangle-right');
-                    setOff('triangle-left');
-                    setOff('triangle-down');
-                    setOff('triangle-up');
-
-                    $('#' + id).addClass('triangle-on');
-                }
-                // Visual only
-                function setOff(id){
-                    $('#' + id).removeClass('triangle-on');
-                }
-
-                function isOn(id){
-                    return $('#' + id).hasClass('triangle-on');
-                }
-                
-                function isLeft(keyCode){
-                    return keyCode == 37 || keyCode == 65;
-                }
-                function isRight(keyCode){
-                    return keyCode == 39 || keyCode == 68;
-                }
-                function isUp(keyCode){
-                    return keyCode == 38 || keyCode == 87;
-                }
-                function isDown(keyCode){
-                    return keyCode == 40 || keyCode == 83;
-                }
-            });
-         </script>
-
-         <style type='text/css'>
-            .box { 
-                height: 48px; 
-                width: 48px;     
-                vertical-align: middle; 
-                background: white;
-            }
-
-            .arrow-box { border: 1px solid; }
-
-            .triangle {
-                width: 0px; 
-                height: 0px; 
-                margin: auto;
-                border-color: black;
-            } 
-
-            .triangle-on { border-color: red; }
-
-            #triangle-up {
-                border-left-width: 16px; 
-                border-left-style: solid;
-                border-left-color: transparent;
-                border-right-width: 16px; 
-                border-right-style: solid;
-                border-right-color: transparent;
-                border-bottom-width: 32px;
-                border-bottom-style: solid;
-            }
-
-            #triangle-down {
-                border-left-width: 16px; 
-                border-left-style: solid;
-                border-left-color: transparent;
-                border-right-width: 16px; 
-                border-right-style: solid;
-                border-right-color: transparent;
-                border-top-width: 32px;
-                border-top-style: solid;
-            }
-
-            #triangle-left {
-                border-top-width: 16px; 
-                border-top-style: solid;
-                border-top-color: transparent;
-                border-right-width: 32px; 
-                border-right-style: solid; 
-                border-bottom-width: 16px;
-                border-bottom-style: solid;
-                border-bottom-color: transparent;
-            }
-
-            #triangle-right {
-                border-top-width: 16px; 
-                border-top-style: solid;
-                border-top-color: transparent;
-                border-left-width: 32px; 
-                border-left-style: solid; 
-                border-bottom-width: 16px;
-                border-bottom-style: solid;
-                border-bottom-color: transparent;
-            }
-
-            #speed {
-                width: 100%;
-                margin: auto;
-            }
-         </style>
+        <link rel='stylesheet' type='text/css' href='robotWeb.css'>
     </head>
 
     <body>
 
-        <p id='msg'>Keyboard Control also available. Use arrow keys or WASD for direction, -/+ for speed (not yet implemented). </p>   
-        <table>
-            <tr>
-                <td colspan='3'>Speed: 
-                    <input type="range" name="speed" id="speed" value='0' min='0' max='3' />
-                </td>
-            </tr>
-            <tr>
-                <td colspan='3'>Direction:</td>
-            </tr>
-            <tr>
-                <td class='box'></td>
-                <td class='box arrow-box'>
-                    <div id='triangle-up' class='triangle'></div>
-                </td>
-                <td class='box'></td>
-            </tr>
-            <tr>
-                <td class='box arrow-box'>
-                    <div id='triangle-left' class='triangle'></div>
-                </td>
-                <td class='box'></td>
-                <td class='box arrow-box'>
-                    <div id='triangle-right' class='triangle'></div>
-                </td>
-            </tr>
-            <tr>
-                <td class='box'></td>
-                <td class='box arrow-box'>
-                    <div id='triangle-down' class='triangle'></div>
-                </td>
-                <td class='box'></td>
-            </tr>
-        </table>
+        <div id='debug'>
+            <p id='msg'>Debug messages will appear here.</p>
+            <a href='index'>View log (TODO)</a>
+            <hr />
+        </div>
+
+        <noscript>
+            <p>Javascript must be enabled for proper functionality.</p>
+        </noscript>
+
+        <label for='direction'>Current direction: </label><span id='direction'>STOP</span>
+        <br />
+        <label for='speed'>Current speed: </label><span id='speed'>STOP</span>
+        <hr />
+        
+        <div>
+            <label for='nameControl'>Speed:</label>
+            <br />
+            <input type='range' id='speedControl' name='speedControl' min='0' max='3' value='0' />
+            <br />
+            <span>Direction:</span>
+            
+            <table>          
+                <tr>
+                    <td class='box'></td>
+                    <td class='box arrow-box'>
+                        <div id='triangle-up' class='triangle'></div>
+                    </td>
+                    <td class='box'></td>
+                </tr>
+                <tr>
+                    <td class='box arrow-box'>
+                        <div id='triangle-left' class='triangle'></div>
+                    </td>
+                    <td class='box'></td>
+                    <td class='box arrow-box'>
+                        <div id='triangle-right' class='triangle'></div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class='box'></td>
+                    <td class='box arrow-box'>
+                        <div id='triangle-down' class='triangle'></div>
+                    </td>
+                    <td class='box'></td>
+                </tr>
+            </table>
+        </div>
+
+        <p id='instructions'>Keyboard Control also available. Use arrow keys or WASD for direction. Use 'X' or '&lt;' to slow down and 'C' or '&gt;' to speed up. Speed control may not work on some international keyboards.</p>
 
     </body>   
 </html>
-
-
-

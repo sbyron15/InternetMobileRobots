@@ -27,7 +27,7 @@ const String SPEED_UP = "speedUp";
 const String SPEED_DOWN = "speedDown";
 const String SLOW = "setSlowSpeed";
 const String MEDIUM = "setMediumSpeed";
-const String FAST = "setFaseSpeed";
+const String FAST = "setFastSpeed";
  
 void setup() 
 { 
@@ -88,16 +88,16 @@ void turnRight() {
   analogWrite(B1M2, 255);
   
   // Motor Controller 2 Backwards
-  analogWrite(B2M1, 0);
-  analogWrite(B2M2, 100);
+  analogWrite(B2M1, 255);
+  analogWrite(B2M2, 0);
   
   lastCommand = RIGHT;
 }
 
 void turnLeft() {
   // Motor Controller 1 Forwards
-  analogWrite(B1M1, 0);
-  analogWrite(B1M2, 100);
+  analogWrite(B1M1, 255);
+  analogWrite(B1M2, 0);
   
   // Motor Controller 2 Backwards
   analogWrite(B2M1, 0);
@@ -185,8 +185,9 @@ void loop()
         client.print(speed);
         
     } else if (command == STOP) {
-      speed = 0;
-      setSpeed();
+      //speed = 0;
+      //setSpeed();
+      allStop();
       client.print("SPEED = ");
       client.print(speed);
     }
