@@ -32,6 +32,8 @@ const String FAST = "setFastSpeed";
 void setup() 
 { 
     Bridge.begin();
+    startWebcam();
+    
     server.begin();
     
     // Set up pins
@@ -118,6 +120,10 @@ void setSpeed() {
     }
 }
 
+void startWebcam() {
+  Process p;
+  p.runShellCommandAsynchronously("mjpg_streamer -i \"input_uvc.so -d /dev/video0 -r 320x240\" -o \"output_http.so -p 8080 -w /root\"");
+}
  
 void loop() 
 { 
