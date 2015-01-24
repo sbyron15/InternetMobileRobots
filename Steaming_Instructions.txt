@@ -1,0 +1,6 @@
+opkg update
+opkg install kmod-video-uvc libv4l
+wget http://www.custommobileapps.com.au/downloads/mjpg-streamer.ipk
+opkg install mjpg-streamer.ipk
+mjpg_streamer -i "input_uvc.so -d /dev/video0 -r 640x480" -o "output_http.so -p 80
+80 -w /root"
