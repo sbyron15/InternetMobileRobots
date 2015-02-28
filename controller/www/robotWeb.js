@@ -52,6 +52,10 @@ $(document).ready(function() {
         // Update server
         updateDirection();
     });
+
+    $('#clear-log').on('click', function(){
+        $('#msg').load('/arduino/clearLog');
+    });
     
     // Direction helper functions
     function setOn(id){

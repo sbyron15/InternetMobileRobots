@@ -1,4 +1,5 @@
 #include <Bridge.h>
+#include <FileIO.h>
 #include <YunServer.h>
 #include <YunClient.h>
 
@@ -49,11 +50,16 @@ const String SPEED_DOWN = "speedDown";
 const String SLOW = "setSlowSpeed";
 const String MEDIUM = "setMediumSpeed";
 const String FAST = "setFastSpeed";
+
 const String RC = "remoteControl";
 const String AI1 = "aiMode1";
 
 int mode = REMOTE_CONTROL;
- 
+
+
+const char* LOG_PATH = "/mnt/sd/arduino/www/controller/log.txt";
+const String CLEAR_LOG = "clearLog";
+
 void setup() 
 { 
     Bridge.begin();
@@ -86,6 +92,8 @@ void setup()
   
     digitalWrite(B2E1, HIGH);
     digitalWrite(B2E2, HIGH);
+
+    FileSystem.begin();
 } 
 
 int getDistanceCM(struct HCSR04 sensor) {
@@ -173,6 +181,17 @@ void startWebcam() {
   Process p;
   p.runShellCommandAsynchronously("mjpg_streamer -i \"input_uvc.so -d /dev/video0 -r 320x240\" -o \"output_http.so -p 8080 -w /root\"");
 }
+
+void log(String msg){
+    File msgLog = FileSystem.open(LOG_PATH, FILE_APPEND);
+    msgLog.println(msg);
+    msgLog.close();
+}
+
+void clearLog(){
+    File msgLog = FileSystem.open(LOG_PATH, FILE_WRITE); // write clears file
+    msgLog.close();
+}
  
 void loop() 
 { 
@@ -201,6 +220,7 @@ void loop()
     // read the command
     String command = client.readString();
     command.trim();        //kill whitespace
+    log("Received command: " + command);
     Serial.println(command);
     if (command == RC) {
       mode = REMOTE_CONTROL;
@@ -250,6 +270,9 @@ void loop()
       allStop();
       client.print("SPEED = ");
       client.print(speed);
+    } else if (command == CLEAR_LOG) {
+      clearLog();
+      client.print("Log cleared");
     }
     
     if(mode == REMOTE_CONTROL) {

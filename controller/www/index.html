@@ -10,25 +10,22 @@
     <body>
 
         <div id='debug'>
+            <h3>Debug</h3>
             <p id='msg'>Debug messages will appear here.</p>
-            <a href='index'>View log (TODO)</a>
+            <a href='log.txt'>View log</a>
+            <br />
+            <button id='clear-log'>Clear log (TODO)</button>
             <hr />
         </div>
-
-
 
         <noscript>
             <p>Javascript must be enabled for proper functionality.</p>
         </noscript>
-
-        <label for='direction'>Current direction: </label><span id='direction'>STOP</span>
-        <br />
-        <label for='speed'>Current speed: </label><span id='speed'>STOP</span>
-        <hr />
         
         <img src="http://arduino2.local:8080/?action=stream" />
 
         <div>
+            <h3>Robot control</h3>
             <label for='nameControl'>Speed:</label>
             <br />
             <input type='range' id='speedControl' name='speedControl' min='0' max='3' value='0' />
@@ -62,7 +59,15 @@
             </table>
         </div>
 
-        <p id='instructions'>Keyboard Control also available. Use arrow keys or WASD for direction. Use 'X' or '&lt;' to slow down and 'C' or '&gt;' to speed up. Speed control may not work on some international keyboards.</p>
+        <p id='instructions'>Keyboard Control also available. Use arrow keys or WASD for direction. Use 'X' or '&lt;' to slow down and 'C' or '&gt;' to speed up. Keyboard control may not work on some international keyboards.</p>
+
+        <hr />
+
+        <h3>Current robot status</h3>
+        <label for='direction'>Current direction: </label><span id='direction'>STOP</span>
+        <br />
+        <label for='speed'>Current speed: </label><span id='speed'>STOP</span>
+        <hr />
 
     </body>   
 </html>
