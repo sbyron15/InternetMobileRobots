@@ -51,6 +51,7 @@ const String SLOW = "setSlowSpeed";
 const String MEDIUM = "setMediumSpeed";
 const String FAST = "setFastSpeed";
 const String STATUS = "status";
+const String START_WEBCAM = "startWebcam";
 
 const String RC = "remoteControl";
 const String AI1 = "aiMode1";
@@ -276,6 +277,8 @@ void loop()
         client.print("Log cleared");
     } else if (command == STATUS){
         client.print(lastCommand + ":" + String(speed));
+    } else if (command == START_WEBCAM) {
+      startWebcam();
     }
     
     if(mode == REMOTE_CONTROL) {
