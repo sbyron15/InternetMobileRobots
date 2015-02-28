@@ -9,7 +9,7 @@ using namespace std;
 int main() {
 
 	string line;
-	ifstream imageFile("straight.pgm");
+	ifstream imageFile("left.pgm");
 
 	int leftScore = 0;
 	int rightScore = 0;
