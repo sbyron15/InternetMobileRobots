@@ -50,6 +50,7 @@ const String SPEED_DOWN = "speedDown";
 const String SLOW = "setSlowSpeed";
 const String MEDIUM = "setMediumSpeed";
 const String FAST = "setFastSpeed";
+const String STATUS = "status";
 
 const String RC = "remoteControl";
 const String AI1 = "aiMode1";
@@ -265,14 +266,16 @@ void loop()
         client.print(speed);
         
     } else if (command == STOP) {
-      //speed = 0;
-      //setSpeed();
-      allStop();
-      client.print("SPEED = ");
-      client.print(speed);
+        //speed = 0;
+        //setSpeed();
+        allStop();
+        client.print("SPEED = ");
+        client.print(speed);
     } else if (command == CLEAR_LOG) {
-      clearLog();
-      client.print("Log cleared");
+        clearLog();
+        client.print("Log cleared");
+    } else if (command == STATUS){
+        client.print(lastCommand + ":" + String(speed));
     }
     
     if(mode == REMOTE_CONTROL) {
