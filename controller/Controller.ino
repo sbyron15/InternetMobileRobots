@@ -180,7 +180,7 @@ void setSpeed() {
 
 void startWebcam() {
   Process p;
-  p.runShellCommandAsynchronously("mjpg_streamer -i \"input_uvc.so -d /dev/video0 -r 320x240\" -o \"output_http.so -p 8080 -w /root\"");
+  p.runShellCommandAsynchronously("mjpg_streamer -i \"input_uvc.so -d /dev/video0 -r 160x120 -f 8 -q 75\" -o \"output_http.so -p 8080 -w /root\"");
 }
 
 void log(String msg){
