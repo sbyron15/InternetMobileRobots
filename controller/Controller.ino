@@ -50,6 +50,7 @@ const String SPEED_DOWN = "speedDown";
 const String SLOW = "setSlowSpeed";
 const String MEDIUM = "setMediumSpeed";
 const String FAST = "setFastSpeed";
+const String STATUS = "status";
 const String START_WEBCAM = "startWebcam";
 
 const String RC = "remoteControl";
@@ -266,14 +267,16 @@ void loop()
         client.print(speed);
         
     } else if (command == STOP) {
-      //speed = 0;
-      //setSpeed();
-      allStop();
-      client.print("SPEED = ");
-      client.print(speed);
+        //speed = 0;
+        //setSpeed();
+        allStop();
+        client.print("SPEED = ");
+        client.print(speed);
     } else if (command == CLEAR_LOG) {
-      clearLog();
-      client.print("Log cleared");
+        clearLog();
+        client.print("Log cleared");
+    } else if (command == STATUS){
+        client.print(lastCommand + ":" + String(speed));
     } else if (command == START_WEBCAM) {
       startWebcam();
     }
