@@ -13,43 +13,48 @@
             <p>Javascript must be enabled for proper functionality.</p>
         </noscript>
         
-        <img src="http://arduino.local:8080/?action=stream" width="320" height="240" />
-
         <div>
             <h3>Robot control</h3>
-            <label for='nameControl'>Speed:</label>
-            <br />
-            <input type='range' id='speedControl' name='speedControl' min='0' max='3' value='0' />
-            <br />
-            <span>Direction:</span>
-            
-            <table>          
-                <tr>
-                    <td class='box'></td>
-                    <td class='box direction-box'>
-                        <img id='up' src='img/up_off.png' class='direction'/>
-                    </td>
-                    <td class='box'></td>
-                </tr>
-                <tr>
-                    <td class='box direction-box'>
-                        <img id='left' src='img/left_off.png' class='direction'/>
-                    </td>
-                    <td class='box direction-box'>
-                        <img id='stop' src='img/stop_on.png' class='direction'/>
-                    </td>
-                    <td class='box direction-box'>
-                        <img id='right' src='img/right_off.png' class='direction'/>
-                    </td>
-                </tr>
-                <tr>
-                    <td class='box'></td>
-                    <td class='box direction-box'>
-                        <img id='down' src='img/down_off.png' class='direction'/>
-                    </td>
-                    <td class='box'></td>
-                </tr>
-            </table>
+            <div>
+                <div id='robot-control'>
+                    <label for='nameControl'>Speed:</label>
+                    <br />
+                    <input type='range' id='speedControl' name='speedControl' min='0' max='3' value='0' />
+                    <br />
+                    <span>Direction:</span>
+                    
+                    <table>          
+                        <tr>
+                            <td class='box'></td>
+                            <td class='box direction-box'>
+                                <img id='up' src='img/up_off.png' class='direction'/>
+                            </td>
+                            <td class='box'></td>
+                        </tr>
+                        <tr>
+                            <td class='box direction-box'>
+                                <img id='left' src='img/left_off.png' class='direction'/>
+                            </td>
+                            <td class='box direction-box'>
+                                <img id='stop' src='img/stop_on.png' class='direction'/>
+                            </td>
+                            <td class='box direction-box'>
+                                <img id='right' src='img/right_off.png' class='direction'/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class='box'></td>
+                            <td class='box direction-box'>
+                                <img id='down' src='img/down_off.png' class='direction'/>
+                            </td>
+                            <td class='box'></td>
+                        </tr>
+                    </table>
+                </div>
+                <div id='robot-feed'>
+                    <img src="http://arduino.local:8080/?action=stream" width="320" height="240" />
+                </div>
+            </div>
         </div>
 
         <p id='instructions'>Keyboard Control also available. Use arrow keys or WASD for direction. Use 'X' or '&lt;' to slow down and 'C' or '&gt;' to speed up. Keyboard control may not work on some international keyboards.</p>

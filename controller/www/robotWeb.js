@@ -11,14 +11,22 @@ $(document).ready(function() {
     var STOP = 'stop';
     var MIN_SPEED = 0;
     var MAX_SPEED = 3;
+    var UPDATE_DELAY = 5000;
 
     // active direction
     var direction = STOP;
+
+    // web command states
     var sending = false;
     var updating = false;
 
     // ensure no speed, browsers often remember previous setting
     $('#speedControl').val(MIN_SPEED);
+
+    // periodically update status (AI can override control)
+    setInterval(function(){
+        updateStatus();
+    }, UPDATE_DELAY);
 
     // Key events
     $(document).on('keydown', function(e) { 
@@ -105,7 +113,8 @@ $(document).ready(function() {
 
     // Sends direction to the server, page updated on response
     function sendDirection(id){
-        // block consecutive call unless the it is stop
+        // Block consecutive call if response is pending. 
+        // Always allow stop command, unless stop is the pending response
         if (sending && (id != STOP || direction == STOP)) return; 
 
         sending = true;
@@ -152,29 +161,25 @@ $(document).ready(function() {
         $('#status').text('Requesting status');
 
         $('#status').load('/arduino/status', function(){
-            var id = STOP;
-            var index = $('#status').text().indexOf(':');
+            var status = $('#status').text();
+            var index = status.indexOf(':');
 
-            $('#msg').text('Here1');
-            var d = $('#status').text().slice(0, index);
+            if (index >= 0){
+                var id = STOP;
+                var robotDirection = status.slice(0, index);
+                var robotSpeed = status.slice(index + 1);          
 
-            $('#msg').text('Here2');
+                if (robotDirection == 'moveForward') id = UP;
+                else if (robotDirection == 'moveBackward') id = DOWN;
+                else if (robotDirection == 'leftTurn') id = LEFT;
+                else if (robotDirection == 'rightTurn') id = RIGHT;
 
-            var s = $('#status').text().slice(index + 1);
-
-            $('#msg').text(d);            
-
-            if (d == 'moveForward') id = UP;
-            else if (d == 'moveBackward') id = DOWN;
-            else if (d == 'leftTurn') id = LEFT;
-            else if (d == 'rightTurn') id = RIGHT;
-
-            //$('#msg').text('Here4');
-
-            setDirection(id);
-            
-            $('direction').text(id);
-            $('speed').text(s);
+                setDirection(id);
+                
+                $('#direction').text(id);
+                $('#speed').text(robotSpeed);
+            }
+            else $('#status').text('Status update failed');
 
             updating = false;
         });
