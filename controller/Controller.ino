@@ -11,6 +11,7 @@
 //States
 #define REMOTE_CONTROL 100
 #define AIMODE1 101
+#define FOLLOW_LINE_MODE 102
 
 struct HCSR04
 {
@@ -55,6 +56,7 @@ const String START_WEBCAM = "startWebcam";
 
 const String RC = "remoteControl";
 const String AI1 = "aiMode1";
+const String FOLLOW_LINE = "followLine";
 
 int mode = REMOTE_CONTROL;
 
@@ -65,7 +67,7 @@ const String CLEAR_LOG = "clearLog";
 void setup() 
 { 
     Bridge.begin();
-    startWebcam();
+    //startWebcam();
     
     //Serial.begin(9600);
     server.begin();
@@ -143,26 +145,26 @@ void allStop() {
   lastCommand = STOP;
 }
 
-void turnRight() {
+void turnRight(int turn_speed) {
   // Motor Controller 1 Forwards
   analogWrite(B1M1, 0);
-  analogWrite(B1M2, 255);
+  analogWrite(B1M2, turn_speed);
   
   // Motor Controller 2 Backwards
-  analogWrite(B2M1, 255);
+  analogWrite(B2M1, turn_speed);
   analogWrite(B2M2, 0);
   
   lastCommand = RIGHT;
 }
 
-void turnLeft() {
+void turnLeft(int turn_speed) {
   // Motor Controller 1 Forwards
-  analogWrite(B1M1, 255);
+  analogWrite(B1M1, turn_speed);
   analogWrite(B1M2, 0);
   
   // Motor Controller 2 Backwards
   analogWrite(B2M1, 0);
-  analogWrite(B2M2, 255);
+  analogWrite(B2M2, turn_speed);
   
   lastCommand = LEFT;
 }
@@ -198,6 +200,7 @@ void clearLog(){
 void loop() 
 { 
   YunClient client = server.accept();
+  
   if(mode == REMOTE_CONTROL) {
     if(lastCommand == FORWARD) {
       if(getDistanceCM(front_sensor) < 20) {
@@ -211,12 +214,12 @@ void loop()
     }
   } else if(mode == AIMODE1) {
     AiMode1(); 
+  } else if (mode == FOLLOW_LINE_MODE) {
+    LineFollowingMode();
   }
   
   // There is a new client?
   if (client) {
-    
-    
     client.setTimeout(2); // Maximum amount of time to wait for the stream
     
     // read the command
@@ -224,12 +227,19 @@ void loop()
     command.trim();        //kill whitespace
     log("Received command: " + command);
     Serial.println(command);
+    
     if (command == RC) {
       mode = REMOTE_CONTROL;
       allStop();
+      
     } else if (command == AI1) {
       mode = AIMODE1; 
       forward();
+      
+    } else if (command == FOLLOW_LINE) {
+      mode = FOLLOW_LINE_MODE;
+      LineFollowingMode();
+      
     } else if (command == SPEED_UP) {
       speed = speed + 10;
       if (speed > 255) {
@@ -291,6 +301,27 @@ void loop()
   }
 }
 
+void LineFollowingMode() {
+    Process p;
+    p.runShellCommand("python /root/image-processing/image-processing.py");
+    
+    char result[1];
+    if (p.available() > 0) {
+      result[0] = p.read();
+    }
+    
+    speed = 150;
+    setSpeed();
+    
+    if (result[0] == 'F') {
+      forward();
+    } else if (result[0] == 'R') {
+      turnRight(150);
+    } else if (result[0] == 'L') {
+      turnLeft(150);
+    }
+}
+
 void RemoteControlMode(String command, YunClient client) {
 
    if (command == FORWARD) {
@@ -302,13 +333,12 @@ void RemoteControlMode(String command, YunClient client) {
       client.print(command);
       
     } else if (command == LEFT) {
-      turnLeft();
+      turnLeft(255);
       client.print(command);
       
     } else if (command == RIGHT) {
-      turnRight();
-      client.print(command);
-      
+      turnRight(255);
+      client.print(command);  
     } 
 }
 
@@ -316,12 +346,12 @@ void AiMode1() {
    
    if(lastCommand == FORWARD) {
      if(getDistanceCM(front_sensor) < 20) {
-       turnLeft();
+       turnLeft(255);
      } 
    }
    else if(lastCommand == LEFT) {
      if(getDistanceCM(front_sensor) > 30) {
-       forward();
+       forward(255);
      } 
    }
 }
