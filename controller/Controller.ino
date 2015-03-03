@@ -3,44 +3,44 @@
 #include <YunServer.h>
 #include <YunClient.h>
 
-#define FRONT_SENSOR 0
-#define BACK_SENSOR 1
-#define TO_CM 29
-
-
-//States
+// States
 #define REMOTE_CONTROL 100
 #define AIMODE1 101
 #define FOLLOW_LINE_MODE 102
 
+// Sensor defines and constants
+#define TO_CM 29
+
 struct HCSR04
 {
   int trigPin;
-  int echoPin; 
+  int echoPin;
 };
 struct HCSR04 front_sensor;
 struct HCSR04 back_sensor;
 
+const int trigPinFront = 3;
+const int echoPinFront = 2;
+
+// Motor controller constants
+const int B1E1 = 4;
+const int B1M1 = 5;
+const int B1E2 = 7;
+const int B1M2 = 6;
+
+const int B2E1 = 8;
+const int B2M1 = 9;
+const int B2E2 = 11;
+const int B2M2 = 10;
+
+// Global server object
 YunServer server;
 
-
-int trigPinFront = 3;
-int echoPinFront = 2;
-
-int B1E1 = 4;
-int B1M1 = 5;
-int B1E2 = 7;
-int B1M2 = 6;
-
-int B2E1 = 8;
-int B2M1 = 9;
-int B2E2 = 11;
-int B2M2 = 10;
-
+// Initial speed
 int speed = 170;
 
+// Command constants
 String lastCommand = "";
-
 const String FORWARD = "moveForward";
 const String BACKWARD = "moveBackward";
 const String LEFT = "leftTurn";
@@ -53,64 +53,227 @@ const String MEDIUM = "setMediumSpeed";
 const String FAST = "setFastSpeed";
 const String STATUS = "status";
 const String START_WEBCAM = "startWebcam";
-
 const String RC = "remoteControl";
 const String AI1 = "aiMode1";
 const String FOLLOW_LINE = "followLine";
-
-int mode = REMOTE_CONTROL;
-
-
-const char* LOG_PATH = "/mnt/sd/arduino/www/controller/log.txt";
 const String CLEAR_LOG = "clearLog";
 
-void setup() 
-{ 
-    Bridge.begin();
-    //startWebcam();
-    
-    //Serial.begin(9600);
-    server.begin();
-    
-    front_sensor.trigPin = 3;
-    front_sensor.echoPin = 2;
-    back_sensor.trigPin = 12;
-    back_sensor.echoPin = 13;
-    
-    // Set up pins
-    pinMode(B1M1, OUTPUT);
-    pinMode(B1M2, OUTPUT);
-  
-    pinMode(B2M1, OUTPUT);
-    pinMode(B2M2, OUTPUT);
-    
-    //setup front/back proximity sensors
-    pinMode(front_sensor.trigPin, OUTPUT);
-    pinMode(front_sensor.echoPin, INPUT);
-    pinMode(back_sensor.trigPin, OUTPUT);
-    pinMode(back_sensor.echoPin, INPUT);
-    
-    // Enable all four motors
-    digitalWrite(B1E1, HIGH);
-    digitalWrite(B1E2, HIGH);
-  
-    digitalWrite(B2E1, HIGH);
-    digitalWrite(B2E2, HIGH);
+// Start off in remote control mode
+int mode = REMOTE_CONTROL;
 
-    FileSystem.begin();
-} 
+// Log file location
+const char* LOG_PATH = "/mnt/sd/arduino/www/controller/log.txt";
 
-int getDistanceCM(struct HCSR04 sensor) {
-  int duration;
-  digitalWrite(sensor.trigPin, LOW);
-  delayMicroseconds(2);
-  digitalWrite(sensor.trigPin, HIGH);
-  delayMicroseconds(5);
-  digitalWrite(sensor.trigPin, LOW);
-  duration = pulseIn(sensor.echoPin, HIGH);
-  return (duration/2) / TO_CM;
+void setup()
+{
+  Bridge.begin();
+  startWebcam();
+
+  server.begin();
+
+  front_sensor.trigPin = 3;
+  front_sensor.echoPin = 2;
+  back_sensor.trigPin = 12;
+  back_sensor.echoPin = 13;
+
+  // Set up pins
+  pinMode(B1M1, OUTPUT);
+  pinMode(B1M2, OUTPUT);
+
+  pinMode(B2M1, OUTPUT);
+  pinMode(B2M2, OUTPUT);
+
+  //setup front/back proximity sensors
+  pinMode(front_sensor.trigPin, OUTPUT);
+  pinMode(front_sensor.echoPin, INPUT);
+  pinMode(back_sensor.trigPin, OUTPUT);
+  pinMode(back_sensor.echoPin, INPUT);
+
+  // Enable all four motors
+  digitalWrite(B1E1, HIGH);
+  digitalWrite(B1E2, HIGH);
+
+  digitalWrite(B2E1, HIGH);
+  digitalWrite(B2E2, HIGH);
+
+  FileSystem.begin();
 }
 
+void loop()
+{
+
+  if (mode == REMOTE_CONTROL) {
+    checkSensorsForObstacle();
+  } else if (mode == AIMODE1) {
+    aiMode1();
+  } else if (mode == FOLLOW_LINE_MODE) {
+    if (!checkSensorsForObstacle()) {
+      lineFollowingMode();
+    }
+  }
+
+  // There is a new client?
+  YunClient client = server.accept();
+  if (client) {
+    client.setTimeout(2); // Maximum amount of time to wait for the stream
+
+    // read the command from the client
+    String command = client.readString();
+    command.trim(); //kill whitespace
+    log("Received command: " + command);
+
+    // detect a mode switch
+    switchMode(command);
+
+    // misc commands
+    if (command == CLEAR_LOG) {
+      clearLog();
+      client.print("Log cleared");
+
+    } else if (command == STATUS) {
+      client.print(lastCommand + ":" + String(speed));
+
+    } else if (command == START_WEBCAM) {
+      startWebcam();
+    }
+
+    // process any speed commands
+    processSpeedCommand(command, client);
+
+    if (mode == REMOTE_CONTROL) {
+      // process any direction commands
+      processDirectionCommand(command, client);
+    } else if (mode == AIMODE1) {
+      aiMode1(); // Is this really necessary? We call aiMode1() at the begining of loop
+    }
+
+    client.stop();
+  }
+}
+
+/**
+***   Command Interpreters
+**/
+void switchMode(String command) {
+  if (command == RC) {
+    mode = REMOTE_CONTROL;
+    allStop();
+
+  } else if (command == AI1) {
+    mode = AIMODE1;
+    forward();
+
+  } else if (command == FOLLOW_LINE) {
+    allStop();
+    mode = FOLLOW_LINE_MODE;
+    lineFollowingMode();
+  }
+}
+
+void processDirectionCommand(String command, YunClient client) {
+  if (command == FORWARD) {
+    forward();
+    client.print(command);
+
+  } else if (command == BACKWARD) {
+    backward();
+    client.print(command);
+
+  } else if (command == LEFT) {
+    turnLeft(255);
+    client.print(command);
+
+  } else if (command == RIGHT) {
+    turnRight(255);
+    client.print(command);
+  }
+}
+
+void processSpeedCommand(String command, YunClient client) {
+  bool printSpeed = false;
+
+  if (command == SPEED_UP) {
+    speed = speed + 10;
+    if (speed > 255) {
+      speed = 255;
+    }
+    printSpeed = true;
+    replayLastDirection();
+
+  } else if (command == SPEED_DOWN) {
+    speed = speed - 10;
+    if (speed < 0) {
+      speed = 0;
+    }
+    printSpeed = true;
+    replayLastDirection();
+
+  } else if (command == FAST) {
+    speed = 255;
+    printSpeed = true;
+    replayLastDirection();
+
+  } else if (command == SLOW) {
+    speed = 150;
+    printSpeed = true;
+    replayLastDirection();
+
+  } else if (command == MEDIUM) {
+    speed = 200;
+    printSpeed = true;
+    replayLastDirection();
+
+  } else if (command == STOP) {
+    allStop();
+  }
+
+  if (printSpeed) {
+    client.print("SPEED = ");
+    client.print(speed);
+    client.print("\n");
+  }
+}
+
+/**
+***   Modes
+**/
+void lineFollowingMode() {
+  Process p;
+  p.runShellCommand("python /root/image-processing/image-processing.py");
+
+  char result[1];
+  if (p.available() > 0) {
+    result[0] = p.read();
+  }
+
+  speed = 150;
+
+  if (result[0] == 'F') {
+    forward();
+  } else if (result[0] == 'R') {
+    turnRight(150);
+  } else if (result[0] == 'L') {
+    turnLeft(150);
+  }
+}
+
+void aiMode1() {
+
+  if (lastCommand == FORWARD) {
+    if (getDistanceCM(front_sensor) < 20) {
+      turnLeft(255);
+    }
+  }
+  else if (lastCommand == LEFT) {
+    if (getDistanceCM(front_sensor) > 30) {
+      forward();
+    }
+  }
+}
+
+/**
+***   Motor Controls
+**/
 void backward() {
   // Motor Controller 1 Backwards
   analogWrite(B1M1, speed);
@@ -118,19 +281,19 @@ void backward() {
   // Motor Controller 2 Backwards
   analogWrite(B2M1, speed);
   analogWrite(B2M2, 0);
-  
+
   lastCommand = BACKWARD;
 }
 
 void forward() {
   // Motor Controller 1 Forwards
-  
+
   analogWrite(B1M1, 0);
   analogWrite(B1M2, speed);
   // Motor Controller 2 Forwards
   analogWrite(B2M1, 0);
   analogWrite(B2M2, speed);
-  
+
   lastCommand = FORWARD;
 }
 
@@ -149,11 +312,11 @@ void turnRight(int turn_speed) {
   // Motor Controller 1 Forwards
   analogWrite(B1M1, 0);
   analogWrite(B1M2, turn_speed);
-  
+
   // Motor Controller 2 Backwards
   analogWrite(B2M1, turn_speed);
   analogWrite(B2M2, 0);
-  
+
   lastCommand = RIGHT;
 }
 
@@ -161,197 +324,73 @@ void turnLeft(int turn_speed) {
   // Motor Controller 1 Forwards
   analogWrite(B1M1, turn_speed);
   analogWrite(B1M2, 0);
-  
+
   // Motor Controller 2 Backwards
   analogWrite(B2M1, 0);
   analogWrite(B2M2, turn_speed);
-  
+
   lastCommand = LEFT;
 }
 
-void setSpeed() {
-    if (lastCommand == FORWARD) {
-      forward();
-    } else if (lastCommand == BACKWARD) {
-      backward();
-    } else if (lastCommand == LEFT) {
-      turnLeft();
-    } else if (lastCommand == RIGHT) {
-      turnRight();
-    }
+void replayLastDirection() {
+  if (lastCommand == FORWARD) {
+    forward();
+  } else if (lastCommand == BACKWARD) {
+    backward();
+  } else if (lastCommand == LEFT) {
+    turnLeft(255);
+  } else if (lastCommand == RIGHT) {
+    turnRight(255);
+  }
 }
 
+/**
+***   Misc Methods
+**/
 void startWebcam() {
   Process p;
   p.runShellCommandAsynchronously("mjpg_streamer -i \"input_uvc.so -d /dev/video0 -r 160x120 -f 8 -q 75\" -o \"output_http.so -p 8080 -w /root\"");
 }
 
-void log(String msg){
-    File msgLog = FileSystem.open(LOG_PATH, FILE_APPEND);
-    msgLog.println(msg);
-    msgLog.close();
+void log(String msg) {
+  File msgLog = FileSystem.open(LOG_PATH, FILE_APPEND);
+  msgLog.println(msg);
+  msgLog.close();
 }
 
-void clearLog(){
-    File msgLog = FileSystem.open(LOG_PATH, FILE_WRITE); // write clears file
-    msgLog.close();
+void clearLog() {
+  File msgLog = FileSystem.open(LOG_PATH, FILE_WRITE); // write clears file
+  msgLog.close();
 }
- 
-void loop() 
-{ 
-  YunClient client = server.accept();
-  
-  if(mode == REMOTE_CONTROL) {
-    if(lastCommand == FORWARD) {
-      if(getDistanceCM(front_sensor) < 20) {
-        allStop(); 
-      } 
-    }
-    if(lastCommand == BACKWARD) {
-      if(getDistanceCM(back_sensor) < 20) {
-        allStop();
-      } 
-    }
-  } else if(mode == AIMODE1) {
-    AiMode1(); 
-  } else if (mode == FOLLOW_LINE_MODE) {
-    LineFollowingMode();
-  }
-  
-  // There is a new client?
-  if (client) {
-    client.setTimeout(2); // Maximum amount of time to wait for the stream
-    
-    // read the command
-    String command = client.readString();
-    command.trim();        //kill whitespace
-    log("Received command: " + command);
-    Serial.println(command);
-    
-    if (command == RC) {
-      mode = REMOTE_CONTROL;
+
+/**
+***   Sensors
+**/
+int getDistanceCM(struct HCSR04 sensor) {
+  int duration;
+  digitalWrite(sensor.trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(sensor.trigPin, HIGH);
+  delayMicroseconds(5);
+  digitalWrite(sensor.trigPin, LOW);
+  duration = pulseIn(sensor.echoPin, HIGH);
+  return (duration / 2) / TO_CM;
+}
+
+bool checkSensorsForObstacle() {
+  if (lastCommand == FORWARD) {
+    if (getDistanceCM(front_sensor) < 20) {
       allStop();
-      
-    } else if (command == AI1) {
-      mode = AIMODE1; 
-      forward();
-      
-    } else if (command == FOLLOW_LINE) {
-      mode = FOLLOW_LINE_MODE;
-      LineFollowingMode();
-      
-    } else if (command == SPEED_UP) {
-      speed = speed + 10;
-      if (speed > 255) {
-        speed = 255;
-      }
-      setSpeed();
-      client.print("SPEED = ");
-      client.print(speed);
-      
-    } else if (command == SPEED_DOWN) {
-      speed = speed - 10;
-      if (speed < 0) {
-        speed = 0;
-      }
-      setSpeed();
-      client.print("SPEED = ");
-      client.print(speed);
-    
-    } else if (command == FAST) {
-        speed = 255;
-        setSpeed();
-        client.print("SPEED = ");
-        client.print(speed);
-        
-    } else if (command == SLOW) {
-        speed = 150;
-        setSpeed();
-        client.print("SPEED = ");
-        client.print(speed);
-      
-    } else if (command == MEDIUM) {
-        speed = 200;
-        setSpeed();
-        client.print("SPEED = ");
-        client.print(speed);
-        
-    } else if (command == STOP) {
-        //speed = 0;
-        //setSpeed();
-        allStop();
-        client.print("SPEED = ");
-        client.print(speed);
-    } else if (command == CLEAR_LOG) {
-        clearLog();
-        client.print("Log cleared");
-    } else if (command == STATUS){
-        client.print(lastCommand + ":" + String(speed));
-    } else if (command == START_WEBCAM) {
-      startWebcam();
+      return true;
     }
-    
-    if(mode == REMOTE_CONTROL) {
-      RemoteControlMode(command, client); 
-    } else if (mode == AIMODE1) {
-      AiMode1(); 
-    }
-    
-    client.stop();
   }
-}
 
-void LineFollowingMode() {
-    Process p;
-    p.runShellCommand("python /root/image-processing/image-processing.py");
-    
-    char result[1];
-    if (p.available() > 0) {
-      result[0] = p.read();
+  if (lastCommand == BACKWARD) {
+    if (getDistanceCM(back_sensor) < 20) {
+      allStop();
+      return true;
     }
-    
-    speed = 150;
-    setSpeed();
-    
-    if (result[0] == 'F') {
-      forward();
-    } else if (result[0] == 'R') {
-      turnRight(150);
-    } else if (result[0] == 'L') {
-      turnLeft(150);
-    }
-}
+  }
 
-void RemoteControlMode(String command, YunClient client) {
-
-   if (command == FORWARD) {
-      forward(); 
-      client.print(command);
-    
-    } else if (command == BACKWARD) {
-      backward();
-      client.print(command);
-      
-    } else if (command == LEFT) {
-      turnLeft(255);
-      client.print(command);
-      
-    } else if (command == RIGHT) {
-      turnRight(255);
-      client.print(command);  
-    } 
-}
-
-void AiMode1() {
-   
-   if(lastCommand == FORWARD) {
-     if(getDistanceCM(front_sensor) < 20) {
-       turnLeft(255);
-     } 
-   }
-   else if(lastCommand == LEFT) {
-     if(getDistanceCM(front_sensor) > 30) {
-       forward(255);
-     } 
-   }
+  return false;
 }
