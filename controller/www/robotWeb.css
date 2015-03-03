@@ -1,62 +1,21 @@
 .box { 
     height: 48px; 
     width: 48px;     
-    vertical-align: middle; 
+    vertical-align: middle;
+    text-align: center;
     background: white;
 }
 
-.arrow-box { border: 1px solid; }
-
-.triangle {
-    width: 0px; 
-    height: 0px; 
-    margin: auto;
-    border-color: black;
-} 
-
-.triangle-on { border-color: red; }
-
-#triangle-up {
-    border-left-width: 16px; 
-    border-left-style: solid;
-    border-left-color: transparent;
-    border-right-width: 16px; 
-    border-right-style: solid;
-    border-right-color: transparent;
-    border-bottom-width: 32px;
-    border-bottom-style: solid;
+.box img {
+    vertical-align: top;
 }
 
-#triangle-down {
-    border-left-width: 16px; 
-    border-left-style: solid;
-    border-left-color: transparent;
-    border-right-width: 16px; 
-    border-right-style: solid;
-    border-right-color: transparent;
-    border-top-width: 32px;
-    border-top-style: solid;
+.direction-box { 
+    border: 1px solid;
+    border-color: black 
 }
 
-#triangle-left {
-    border-top-width: 16px; 
-    border-top-style: solid;
-    border-top-color: transparent;
-    border-right-width: 32px; 
-    border-right-style: solid; 
-    border-bottom-width: 16px;
-    border-bottom-style: solid;
-    border-bottom-color: transparent;
+#robot-control {
+    float: left;
+    margin-right: 20px;
 }
-
-#triangle-right {
-    border-top-width: 16px; 
-    border-top-style: solid;
-    border-top-color: transparent;
-    border-left-width: 32px; 
-    border-left-style: solid; 
-    border-bottom-width: 16px;
-    border-bottom-style: solid;
-    border-bottom-color: transparent;
-}
-

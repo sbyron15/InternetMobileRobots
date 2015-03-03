@@ -9,65 +9,76 @@
 
     <body>
 
-        <div id='debug'>
-            <h3>Debug</h3>
-            <p id='msg'>Debug messages will appear here.</p>
-            <a href='log.txt'>View log</a>
-            <br />
-            <button id='clear-log'>Clear log</button>
-            <hr />
-        </div>
-
         <noscript>
             <p>Javascript must be enabled for proper functionality.</p>
         </noscript>
         
-        <img src="http://arduino.local:8080/?action=stream" width="320" height="240" />
-
         <div>
             <h3>Robot control</h3>
-            <label for='nameControl'>Speed:</label>
-            <br />
-            <input type='range' id='speedControl' name='speedControl' min='0' max='3' value='0' />
-            <br />
-            <span>Direction:</span>
-            
-            <table>          
-                <tr>
-                    <td class='box'></td>
-                    <td class='box arrow-box'>
-                        <div id='triangle-up' class='triangle'></div>
-                    </td>
-                    <td class='box'></td>
-                </tr>
-                <tr>
-                    <td class='box arrow-box'>
-                        <div id='triangle-left' class='triangle'></div>
-                    </td>
-                    <td class='box'></td>
-                    <td class='box arrow-box'>
-                        <div id='triangle-right' class='triangle'></div>
-                    </td>
-                </tr>
-                <tr>
-                    <td class='box'></td>
-                    <td class='box arrow-box'>
-                        <div id='triangle-down' class='triangle'></div>
-                    </td>
-                    <td class='box'></td>
-                </tr>
-            </table>
+            <div>
+                <div id='robot-control'>
+                    <label for='nameControl'>Speed:</label>
+                    <br />
+                    <input type='range' id='speedControl' name='speedControl' min='0' max='3' value='0' />
+                    <br />
+                    <span>Direction:</span>
+                    
+                    <table>          
+                        <tr>
+                            <td class='box'></td>
+                            <td class='box direction-box'>
+                                <img id='up' src='img/up_off.png' class='direction'/>
+                            </td>
+                            <td class='box'></td>
+                        </tr>
+                        <tr>
+                            <td class='box direction-box'>
+                                <img id='left' src='img/left_off.png' class='direction'/>
+                            </td>
+                            <td class='box direction-box'>
+                                <img id='stop' src='img/stop_on.png' class='direction'/>
+                            </td>
+                            <td class='box direction-box'>
+                                <img id='right' src='img/right_off.png' class='direction'/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class='box'></td>
+                            <td class='box direction-box'>
+                                <img id='down' src='img/down_off.png' class='direction'/>
+                            </td>
+                            <td class='box'></td>
+                        </tr>
+                    </table>
+                </div>
+                <div id='robot-feed'>
+                    <img src="http://arduino.local:8080/?action=stream" width="320" height="240" />
+                </div>
+            </div>
         </div>
 
         <p id='instructions'>Keyboard Control also available. Use arrow keys or WASD for direction. Use 'X' or '&lt;' to slow down and 'C' or '&gt;' to speed up. Keyboard control may not work on some international keyboards.</p>
 
         <hr />
 
-        <h3>Robot status</h3>
-        <label for='direction'>Current direction: </label><span id='direction'>STOP</span>
-        <br />
-        <label for='speed'>Current speed: </label><span id='speed'>STOP</span>
-        <hr />
+        <div id='debug'>
+            <h3>Debug: Web status</h3>
+            <p id='msg'>Debug messages will appear here.</p>
+            <a href='log.txt'>View log</a>
+            <br />
+            <button id='clear-log'>Clear log</button>
+            <hr />
+
+            <h3>Debug: Robot status</h3>
+            <label for='status'>Status (direction:speed): </label><span id='status'>Unknown</span>
+            <br />
+            <label for='speed'>Current speed: </label><span id='speed'>STOP</span>
+            <br />
+            <label for='direction'>Current direction: </label><span id='direction'>STOP</span>
+            <br />
+            <button id='force-update'>Force update</button>
+            <hr />
+        </div>
 
     </body>   
 </html>

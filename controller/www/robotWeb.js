@@ -4,12 +4,29 @@ $(document).ready(function() {
     if (!DEBUG) $('#debug').hide();
 
     // Constants
-    var UP = 'triangle-up';
-    var DOWN = 'triangle-down';
-    var RIGHT = 'triangle-right';
-    var LEFT = 'triangle-left';
+    var UP = 'up';
+    var DOWN = 'down';
+    var RIGHT = 'right';
+    var LEFT = 'left';
+    var STOP = 'stop';
     var MIN_SPEED = 0;
     var MAX_SPEED = 3;
+    var UPDATE_DELAY = 5000;
+
+    // active direction
+    var direction = STOP;
+
+    // web command states
+    var sending = false;
+    var updating = false;
+
+    // ensure no speed, browsers often remember previous setting
+    $('#speedControl').val(MIN_SPEED);
+
+    // periodically update status (AI can override control)
+    setInterval(function(){
+        updateStatus();
+    }, UPDATE_DELAY);
 
     // Key events
     $(document).on('keydown', function(e) { 
@@ -22,52 +39,33 @@ $(document).ready(function() {
         else if (isSlowDown(e.keyCode) && parseInt(sc.val()) > MIN_SPEED){
             sc.val(parseInt(sc.val()) - 1);
         }
-        else if (isDirectional(e.keyCode)){
-            if (isLeft(e.keyCode)) setOn(LEFT);
-            else if (isUp(e.keyCode)) setOn(UP);
-            else if (isRight(e.keyCode)) setOn(RIGHT);
-            else if (isDown(e.keyCode)) setOn(DOWN);
-            updateDirection();
-        }
+        else if (isLeft(e.keyCode)) sendDirection(LEFT);
+        else if (isUp(e.keyCode)) sendDirection(UP);
+        else if (isRight(e.keyCode)) sendDirection(RIGHT);
+        else if (isDown(e.keyCode)) sendDirection(DOWN);
     }); 
     $(document).on('keyup', function(e) { 
         $('#msg').text(e.keyCode + ' key released');
         
-        if (isLeft(e.keyCode)) setOff(LEFT);
-        else if (isUp(e.keyCode)) setOff(UP);
-        else if (isRight(e.keyCode)) setOff(RIGHT);
-        else if (isDown(e.keyCode)) setOff(DOWN);
-        else return; // nothing to be done
-
-        updateDirection();
+        if (isDirectional(e.keyCode)) {
+            sendDirection(STOP);
+        }
     });
 
     // Direction click event
-    $('.arrow-box').on('click', function(){
-        var id = $(this).children('.triangle').attr('id');
-        
-        // Update page
-        isOn(id) ? setOff(id) : setOn(id);
+    $('.direction-box').on('click', function(){
+        var id = $(this).children('img').attr('id');
 
-        // Update server
-        updateDirection();
+        if (id == direction) sendDirection(STOP);
+        else sendDirection(id);
     });
 
     $('#clear-log').on('click', function(){
         $('#msg').load('/arduino/clearLog');
     });
-    
-    // Direction helper functions
-    function setOn(id){
-        $('.triangle').removeClass('triangle-on');
-        $('#' + id).addClass('triangle-on');
-    }
-    function setOff(id){
-        $('#' + id).removeClass('triangle-on');
-    }
-    function isOn(id){
-        return $('#' + id).hasClass('triangle-on');
-    }
+    $('#force-update').on('click', function(){
+        updateStatus();
+    });
     
     // Keyboard helper functions
     function isLeft(keyCode){
@@ -94,7 +92,7 @@ $(document).ready(function() {
 
     // Speed change event
     $('#speedControl').on('change', function(){
-        $('#msg').text('Speed set to ' + $(this).val()); 
+        $('#msg').text('Setting speed to level ' + $(this).val()); 
         switch (parseInt($(this).val())){
             case 0: 
                 $('#speed').load('/arduino/stop');
@@ -113,33 +111,84 @@ $(document).ready(function() {
         }
     });
 
-    // Sends direction to the server
-    function updateDirection(){
+    // Sends direction to the server, page updated on response
+    function sendDirection(id){
+        // Block consecutive call if response is pending. 
+        // Always allow stop command, unless stop is the pending response
+        if (sending && (id != STOP || direction == STOP)) return; 
+
+        sending = true;
+
         var path = '';
         var debugMsg = '';
 
-        if (isOn(UP)){
+        if (id == UP){
             path = '/arduino/moveForward';
-            debugMsg = 'Direction set to forward';
+            debugMsg = 'Setting direction to forward';
         }
-        else if (isOn(DOWN)){
+        else if (id == DOWN){
             path = '/arduino/moveBackward';
-            debugMsg = 'Direction set to reverse';
+            debugMsg = 'Setting direction to reverse';
         }
-        else if (isOn(LEFT)){
+        else if (id == LEFT){
             path = '/arduino/leftTurn';
-            debugMsg = 'Direction set to left';
+            debugMsg = 'Setting direction to left';
         }
-        else if (isOn(RIGHT)){
+        else if (id == RIGHT){
             path = '/arduino/rightTurn';
-            debugMsg = 'Direction set to right';
+            debugMsg = 'Setting direction to right';
         }
-        else { // nothing's on, make sure there is no movement
+        else { // id is stop, or unrecognized, stop is failsafe.
+            id = STOP;
             path = '/arduino/stop';
-            debugMsg = 'No direction set';
+            debugMsg = 'Stopping';
         }
 
-        $('#direction').load(path);
+        $('#direction').load(path, function(){ 
+            // on response, update page and state
+            setDirection(id);
+            sending = false;
+        });
+
         $('#msg').text(debugMsg);
+    }
+
+    function updateStatus(){
+        // don't bother updating if change will happen anyways
+        if (sending || updating) return;
+        updating = true;
+
+        $('#status').text('Requesting status');
+
+        $('#status').load('/arduino/status', function(){
+            var status = $('#status').text();
+            var index = status.indexOf(':');
+
+            if (index >= 0){
+                var id = STOP;
+                var robotDirection = status.slice(0, index);
+                var robotSpeed = status.slice(index + 1);          
+
+                if (robotDirection == 'moveForward') id = UP;
+                else if (robotDirection == 'moveBackward') id = DOWN;
+                else if (robotDirection == 'leftTurn') id = LEFT;
+                else if (robotDirection == 'rightTurn') id = RIGHT;
+
+                setDirection(id);
+                
+                $('#direction').text(id);
+                $('#speed').text(robotSpeed);
+            }
+            else $('#status').text('Status update failed');
+
+            updating = false;
+        });
+    }
+
+    // set UI direction to reflect robot direction
+    function setDirection(id){
+        $('#' + direction).attr('src', 'img/' + direction + '_off.png');
+        $('#' + id).attr('src', 'img/' + id + '_on.png');
+        direction = id;
     }
 });
