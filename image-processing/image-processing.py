@@ -1,61 +1,65 @@
-import sys, getopt
+import sys, getopt, Image, io, urllib
 
 def main(argv):
     inputfile = ''
     width = ''
+    arguments = False
+    debug = False;
     try:
-        opts, args = getopt.getopt(argv, "i:w:")
+        opts, args = getopt.getopt(argv, "i:d")
     except getopt.GetoptError:
-        print 'image-processing.py -i <inputfile> -w <width>'
+        print 'image-processing.py -i <inputfile> -d <debug>'
         sys.exit(2)
 
     for opt, arg in opts:
         if opt == '-i':
-            inputfile = arg;
-        elif opt == '-w':
-            width = int(arg);
+            inputfile = arg
+            arguments = True
+        if opt == '-d':
+            debug = True
+        
+    if (arguments) :
+        image_file = Image.open(inputfile)
+    else:
+        url = urllib.urlopen("http://localhost:8080/?action=snapshot")
+        snapshot = io.BytesIO(url.read())
+        image_file = Image.open(snapshot)
 
-    image = open(inputfile, 'r')
-    j = 0
+    image_file = image_file.convert('1') # convert image to black and white
+    (width,height) = image_file.size
+    half = (width/2) -1
+
     leftscore = 0
     rightscore = 0
-    i = 0
-    for line in image:
-        if j < 3:
-            j += 1
-            
-        else:
-            lineSegments = line.split(' ')
-            for pixel in lineSegments:
-                if pixel.strip() != '':
-                    if i > (width - 1):
-                        i = 0
-                        next
-                    if i < (width/2):
-                        leftscore += int(pixel)
-                    else:
-                        rightscore += int(pixel)
-                    i += 1
-            
-    image.close()
-    print("Left Score: " + str(leftscore) + "\n")
-    print("Right Score: " + str(rightscore))
+
+    for i in range(0, height-2):
+        for j in range(0, half):
+            leftscore += image_file.getpixel((j,i))
+        for j in range(half+1, width-1):
+            rightscore += image_file.getpixel((j,i))
+
+    if (debug) :
+        print("Left Score: " + str(leftscore))
+        print("Right Score: " + str(rightscore))
 
     delta = 1.05
+
     if leftscore > rightscore:
         score = float(leftscore) / float(rightscore)
-        print score
+        if (debug) :
+            print score
         if score > delta:
-            print("turn right\n")
+            print("RIGHT")
         else:
-            print("go straight\n")
+            print("STRAIGHT")
     else:
         score = float(rightscore) / float(leftscore)
-        print score
+        if (debug) :
+            print score
         if score > delta:
-            print("turn left\n")
+            print("LEFT")
         else:
-            print("go straight\n")
+            print("STRAIGHT")
 
 if __name__ == "__main__":
    main(sys.argv[1:])
