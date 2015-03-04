@@ -16,8 +16,14 @@
         <div>
             <h3>Robot control</h3>
             <div>
+                <div id='error'>
+                    <p id='error-msg' class='error'></p>
+                    <button id='reconnect'></button>
+                    <br />
+                </div>
+
                 <div id='robot-control'>
-                    <label for='nameControl'>Speed:</label>
+                    <label for='speedControl'>Speed:</label>
                     <br />
                     <input type='range' id='speedControl' name='speedControl' min='0' max='3' value='0' />
                     <br />
@@ -54,10 +60,10 @@
                 <div id='robot-feed'>
                     <img src="http://arduino.local:8080/?action=stream" width="320" height="240" />
                 </div>
-            </div>
-        </div>
 
-        <p id='instructions'>Keyboard Control also available. Use arrow keys or WASD for direction. Use 'X' or '&lt;' to slow down and 'C' or '&gt;' to speed up. Keyboard control may not work on some international keyboards.</p>
+                <p id='instructions'>Keyboard Control also available. Use arrow keys or WASD for direction. Use 'X' or '&lt;' to slow down and 'C' or '&gt;' to speed up. Keyboard control may not work on some international keyboards.</p>
+            </div>
+        </div>   
 
         <hr />
 
@@ -75,6 +81,8 @@
             <label for='speed'>Current speed: </label><span id='speed'>STOP</span>
             <br />
             <label for='direction'>Current direction: </label><span id='direction'>STOP</span>
+            <br />
+            <label for='sid'>Current direction: </label><span id='sid'></span>
             <br />
             <button id='force-update'>Force update</button>
             <hr />
