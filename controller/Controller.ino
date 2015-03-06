@@ -7,6 +7,7 @@
 #define REMOTE_CONTROL 100
 #define AIMODE1 101
 #define FOLLOW_LINE_MODE 102
+#define FOLLOW_GREEN_MODE 103
 
 // Sensor defines and constants
 #define TO_CM 29
@@ -56,6 +57,7 @@ const String START_WEBCAM = "startWebcam";
 const String RC = "remoteControl";
 const String AI1 = "aiMode1";
 const String FOLLOW_LINE = "followLine";
+const String FOLLOW_GREEN = "followGreen";
 const String CLEAR_LOG = "clearLog";
 const String GET_SID = "getSID";
 
@@ -119,6 +121,13 @@ void loop()
     } else {
       allStop();
       mode == REMOTE_CONTROL;
+    } 
+  }else if (mode == FOLLOW_GREEN_MODE) {
+    if (!checkSensorsForObstacle()) {
+      followGreenMode();
+    } else {
+      allStop();
+      mode == REMOTE_CONTROL;
     }
   }
 
@@ -175,14 +184,20 @@ void switchMode(String command, YunClient client) {
 
   } else if (command == AI1) {
     mode = AIMODE1;
-    client.print("Entering AI Mode");
+    client.print("Current Mode: AI Mode");
     forward();
 
   } else if (command == FOLLOW_LINE) {
     allStop();
     mode = FOLLOW_LINE_MODE;
-    client.print("Entering Line Following Mode");
+    client.print("Current Mode: Line Following Mode");
     lineFollowingMode();
+    
+  } else if (command == FOLLOW_GREEN) {
+    allStop();
+    mode = FOLLOW_GREEN_MODE;
+    client.print("Current Mode: Follow Green Mode");
+    followGreenMode();
   }
 }
 
@@ -255,7 +270,7 @@ void processSpeedCommand(String command, YunClient client) {
 **/
 void lineFollowingMode() {
   Process p;
-  p.runShellCommand("nice -n -19 python /root/image-processing/image-processing.py");
+  p.runShellCommand("nice -n -19 python /root/image-processing/follow-line.py");
 
   char result[1];
   if (p.available() > 0) {
@@ -278,6 +293,34 @@ void lineFollowingMode() {
   } else if (result[0] == 'S') {
     allStop();
     log("Line Following: Stop");
+  }
+}
+
+void followGreenMode() {
+  Process p;
+  p.runShellCommand("nice -n -19 python /root/image-processing/follow-green.py");
+
+  char result[1];
+  if (p.available() > 0) {
+    result[0] = p.read();
+    log(result[0]);
+  }
+
+  p.close();
+  speed = 170;
+
+  if (result[0] == 'F') {
+    forward();
+    log("Follow Green Mode: Forward");
+  } else if (result[0] == 'R') {
+    turnRight(200);
+    log("Follow Green Mode: Right");
+  } else if (result[0] == 'L') {
+    turnLeft(200);
+    log("Follow Green Mode: Left");
+  } else if (result[0] == 'S') {
+    allStop();
+    log("Follow Green Mode: Stop");
   }
 }
 
