@@ -20,6 +20,10 @@ $(document).ready(function() {
     var sending = false;
     var updating = false;
 
+    var sid = null;
+
+    $('#error').hide();
+
     // ensure no speed, browsers often remember previous setting
     $('#speedControl').val(MIN_SPEED);
 
@@ -60,6 +64,18 @@ $(document).ready(function() {
         else sendDirection(id);
     });
 
+    // 
+    $('#reconnect').on('click', function(){
+        $(this).attr('disabled', 'disabled');
+        $(this).text('Connecting...');
+
+        getSID(function(){
+            $('#reconnect').text('Connected!');
+            setTimeout(function(){ $('#error').hide(); }, 1000);
+        });
+    });
+
+    // debug control buttons
     $('#clear-log').on('click', function(){
         $('#msg').load('/arduino/clearLog');
     });
@@ -166,8 +182,8 @@ $(document).ready(function() {
 
             if (index >= 0){
                 var id = STOP;
-                var robotDirection = status.slice(0, index);
-                var robotSpeed = status.slice(index + 1);          
+                var robotDirection = status.slice(0, index).trim();
+                var robotSpeed = status.slice(index + 1).trim();          
 
                 if (robotDirection == 'moveForward') id = UP;
                 else if (robotDirection == 'moveBackward') id = DOWN;
@@ -190,5 +206,56 @@ $(document).ready(function() {
         $('#' + direction).attr('src', 'img/' + direction + '_off.png');
         $('#' + id).attr('src', 'img/' + id + '_on.png');
         direction = id;
+    }
+
+    // handles sending commands, including the session id
+    function sendCommand(htmlId, commandPath){
+        if (sid == null){
+            getSID(function(){
+                sendCommand(htmlId, commandPath);
+            });
+        }
+        else { 
+            // we have a session id, execute command
+            $('#' + htmlId).load(commandPath + '/' + sid, function(){
+                if ($('#' + htmlId).text().slice(5) == 'err=0'){ // session id expired
+                    sid = null;
+                    getSID(function(){
+                        sendCommand(htmlId, commandPath);
+                    });
+                }
+                else if ($('#' + htmlId).text().slice(5) == 'err=2'){ // sid expired and a new sid was issued
+                    $('#error').show();
+                }
+                else { //successful command
+                    $('#error').hide();
+                }
+            });
+        }
+    }
+
+    function getSID(onSuccess){
+        getSID(onSuccess, function(){
+            setError();
+        });
+    }
+    function getSID(onSuccess, onFailure){
+        // attempt to get SID
+        $('#sid').load('/arduino/getSID', function(){
+            if ($('#sid').text().slice(5) == 'err=1'){ // another session is in progress
+                sid = null;
+                onFailure();
+            }
+            else { // sid received from robot
+                sid = $('#sid').text();
+                onSuccess();
+            }
+        });
+    }
+    function setError(){
+        $('#error').show();
+        $('#error-msg').text('Command failed: another user may be controlling the robot.');
+        $('#reconnect').removeAttr('disabled');
+        $('#reconnect').text('Connection failed: try again');
     }
 });

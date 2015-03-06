@@ -57,9 +57,12 @@ const String RC = "remoteControl";
 const String AI1 = "aiMode1";
 const String FOLLOW_LINE = "followLine";
 const String CLEAR_LOG = "clearLog";
+const String GET_SID = "getSID";
 
 // Start off in remote control mode
 int mode = REMOTE_CONTROL;
+
+long sid = -1;
 
 // Log file location
 const char* LOG_PATH = "/mnt/sd/arduino/www/controller/log.txt";
@@ -96,7 +99,11 @@ void setup()
   digitalWrite(B2E1, HIGH);
   digitalWrite(B2E2, HIGH);
 
+  // Start log
   FileSystem.begin();
+  log("System started");
+  
+  randomSeed(analogRead(0)); // reading unused pin is fairly random
 }
 
 void loop()
@@ -138,6 +145,9 @@ void loop()
 
     } else if (command == START_WEBCAM) {
       startWebcam();
+    } else if (command == GET_SID) {
+      sid = random(0x7FFFFFFFL);
+      client.print(String(sid));
     }
 
     // process any speed commands

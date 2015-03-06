@@ -12,7 +12,12 @@
 
 .direction-box { 
     border: 1px solid;
-    border-color: black 
+    border-color: black;
+}
+
+.error {
+    color: red;
+    font-weight: bold;
 }
 
 #robot-control {
