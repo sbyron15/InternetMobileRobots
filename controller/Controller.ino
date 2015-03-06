@@ -109,6 +109,9 @@ void loop()
   } else if (mode == FOLLOW_LINE_MODE) {
     if (!checkSensorsForObstacle()) {
       lineFollowingMode();
+    } else {
+      allStop();
+      mode == REMOTE_CONTROL;
     }
   }
 
@@ -123,7 +126,7 @@ void loop()
     log("Received command: " + command);
 
     // detect a mode switch
-    switchMode(command);
+    switchMode(command, client);
 
     // misc commands
     if (command == CLEAR_LOG) {
@@ -154,18 +157,21 @@ void loop()
 /**
 ***   Command Interpreters
 **/
-void switchMode(String command) {
+void switchMode(String command, YunClient client) {
   if (command == RC) {
     mode = REMOTE_CONTROL;
+    client.print("Entering Remote Control Mode");
     allStop();
 
   } else if (command == AI1) {
     mode = AIMODE1;
+    client.print("Entering AI Mode");
     forward();
 
   } else if (command == FOLLOW_LINE) {
     allStop();
     mode = FOLLOW_LINE_MODE;
+    client.print("Entering Line Following Mode");
     lineFollowingMode();
   }
 }
@@ -239,21 +245,29 @@ void processSpeedCommand(String command, YunClient client) {
 **/
 void lineFollowingMode() {
   Process p;
-  p.runShellCommand("python /root/image-processing/image-processing.py");
+  p.runShellCommand("nice -n -19 python /root/image-processing/image-processing.py");
 
   char result[1];
   if (p.available() > 0) {
     result[0] = p.read();
+    log(result[0]);
   }
 
-  speed = 150;
+  p.close();
+  speed = 170;
 
   if (result[0] == 'F') {
     forward();
+    log("Line Following: Forward");
   } else if (result[0] == 'R') {
-    turnRight(150);
+    turnRight(200);
+    log("Line Following: Right");
   } else if (result[0] == 'L') {
-    turnLeft(150);
+    turnLeft(200);
+    log("Line Following: Left");
+  } else if (result[0] == 'S') {
+    allStop();
+    log("Line Following: Stop");
   }
 }
 
