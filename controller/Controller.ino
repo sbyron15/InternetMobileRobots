@@ -58,11 +58,27 @@ const String AI1 = "aiMode1";
 const String FOLLOW_LINE = "followLine";
 const String CLEAR_LOG = "clearLog";
 const String GET_SID = "getSID";
+const String SET_TIME = "setTime";
 
 // Start off in remote control mode
 int mode = REMOTE_CONTROL;
 
+// Error constants
+const int ERR_NONE = 0;    // indicates no error for internal use
+const int ERR_BAD_CMD = 1; // malformed/unrecognized command
+const int ERR_NO_SID = 2; // no sid provided when needed
+const int ERR_BAD_SID = 3; // wrong sid provided
+const int ERR_SID_EXP = 4;  // sid expired, no session is in progress
+const int ERR_BAD_SID_REQ = 5; // getSID called, but unexpired sid already exists
+
+const int SESSION_TIMEOUT = 60000; // session times out in one minute
+
 long sid = -1;
+unsigned long session_set_time = 0; // indicates time from millis() that session was last refreshed
+
+// time keeping
+long unix_time = -1;
+unsigned long millis_time_set = 0; // indicates how long (in ms) the system was on when unix_time was last set
 
 // Log file location
 const char* LOG_PATH = "/mnt/sd/arduino/www/controller/log.txt";
@@ -118,45 +134,80 @@ void loop()
       lineFollowingMode();
     }
   }
-
+  
   // There is a new client?
   YunClient client = server.accept();
   if (client) {
+    int error = ERR_NONE;
     client.setTimeout(2); // Maximum amount of time to wait for the stream
 
     // read the command from the client
     String command = client.readString();
     command.trim(); //kill whitespace
-    log("Received command: " + command);
-
-    // detect a mode switch
-    switchMode(command);
-
-    // misc commands
-    if (command == CLEAR_LOG) {
-      clearLog();
-      client.print("Log cleared");
-
-    } else if (command == STATUS) {
+    
+    // expire session on timeout
+    if (millis() - session_set_time > SESSION_TIMEOUT) sid = -1;    
+  
+    if (command == STATUS){ // always allow status commands
+      log("Received command: " + command);
       client.print(lastCommand + ":" + String(speed));
+    } else if (command == GET_SID) { //always allow attempts to get sid
+      log("Received command: " + command);      
+      if (sid == -1){
+        sid = random(0x7FFFFFFFL);
+        client.print(String(sid));
+      } else {
+        error = ERR_BAD_SID_REQ;
+      }
+    } else {        
+      long receivedSID;
+      
+      int sidSlashIndex = command.lastIndexOf('/');      
+      if (sidSlashIndex == -1 || sidSlashIndex == command.length() - 1) error = ERR_NO_SID;
+      else if (sid == -1) error = ERR_SID_EXP;
+      else {
+        // extract sid from rest of command
+        receivedSID = command.substring(sidSlashIndex + 1).toInt();
+        command = command.substring(0, sidSlashIndex);
+        if (receivedSID != sid) error = ERR_BAD_SID;
+      }
 
-    } else if (command == START_WEBCAM) {
-      startWebcam();
-    } else if (command == GET_SID) {
-      sid = random(0x7FFFFFFFL);
-      client.print(String(sid));
+      if (error == ERR_NONE){
+        log("Received command: " + command);
+        session_set_time = millis(); // refresh session
+        
+        // detect a mode switch
+        switchMode(command);
+    
+        // misc commands
+        
+        if (command == START_WEBCAM) {
+          startWebcam();
+        } else if (command.startsWith(SET_TIME)){
+          unix_time = command.substring(command.indexOf('/') + 1).toInt();
+          millis_time_set = millis();
+          client.print("time=" + String(unix_time));
+        } else if (command == CLEAR_LOG) {
+          clearLog();
+          client.print("Log cleared");
+        }
+    
+        // process any speed commands
+        processSpeedCommand(command, client);
+    
+        if (mode == REMOTE_CONTROL) {
+          // process any direction commands
+          processDirectionCommand(command, client);
+        } else if (mode == AIMODE1) {
+          aiMode1(); // Is this really necessary? We call aiMode1() at the begining of loop
+        }
+      }
     }
-
-    // process any speed commands
-    processSpeedCommand(command, client);
-
-    if (mode == REMOTE_CONTROL) {
-      // process any direction commands
-      processDirectionCommand(command, client);
-    } else if (mode == AIMODE1) {
-      aiMode1(); // Is this really necessary? We call aiMode1() at the begining of loop
+    
+    if (error != ERR_NONE) {
+      client.print(getErrorString(error));
+      log("Error id=" + String(error) + " on received command \"" + command + "\"");
     }
-
     client.stop();
   }
 }
@@ -364,13 +415,20 @@ void startWebcam() {
 
 void log(String msg) {
   File msgLog = FileSystem.open(LOG_PATH, FILE_APPEND);
-  msgLog.println(msg);
+  if (unix_time == -1)
+    msgLog.println(msg);
+  else 
+    msgLog.println(String(unix_time + (millis() - millis_time_set)/1000) + ": " + msg);
   msgLog.close();
 }
 
 void clearLog() {
   File msgLog = FileSystem.open(LOG_PATH, FILE_WRITE); // write clears file
   msgLog.close();
+}
+
+String getErrorString(int err_id){
+  return String("err=") + String(err_id);
 }
 
 /**
