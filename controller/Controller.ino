@@ -180,13 +180,11 @@ void switchMode(String command, YunClient client) {
     allStop();
     mode = FOLLOW_LINE_MODE;
     client.print("Current Mode: Line Following Mode");
-    lineFollowingMode();
 
   } else if (command == FOLLOW_GREEN) {
     allStop();
     mode = FOLLOW_GREEN_MODE;
     client.print("Current Mode: Follow Green Mode");
-    followGreenMode();
   }
 }
 
@@ -258,12 +256,8 @@ void processSpeedCommand(String command, YunClient client) {
 ***   Modes
 **/
 void lineFollowingMode() {
-  if (checkSensorsForObstacle()) {
-    return;
-  }
-
   Process p;
-  p.runShellCommand("nice -n -19 python /root/image-processing/follow-line.py");
+  p.runShellCommand("nice -n -19 python /root/image-processing/follow-line.pyo");
 
   char result[1];
   if (p.available() > 0) {
@@ -290,12 +284,8 @@ void lineFollowingMode() {
 }
 
 void followGreenMode() {
-  if (checkSensorsForObstacle()) {
-    return;
-  }
-
   Process p;
-  p.runShellCommand("nice -n -19 python /root/image-processing/follow-green.py");
+  p.runShellCommand("nice -n -19 python /root/image-processing/follow-green.pyo");
 
   char result[1];
   if (p.available() > 0) {
@@ -418,29 +408,13 @@ void startWebcam() {
 
 void log(String msg) {
   File msgLog = FileSystem.open(LOG_PATH, FILE_APPEND);
-  msgLog.println(getTimeStamp() + " - " + msg);
+  msgLog.println(msg);
   msgLog.close();
 }
 
 void clearLog() {
   File msgLog = FileSystem.open(LOG_PATH, FILE_WRITE); // write clears file
   msgLog.close();
-}
-
-String getTimeStamp() {
-  String result;
-  Process time;
-  time.begin("date");
-  time.addParameter("+%D-%T");  
-  time.run(); 
-
-  while(time.available()>0) {
-    char c = time.read();
-    if(c != '\n')
-      result += c;
-  }
-
-  return result;
 }
 
 /**
@@ -458,18 +432,12 @@ int getDistanceCM(struct HCSR04 sensor) {
 }
 
 bool checkSensorsForObstacle() {
-  if (lastCommand == FORWARD) {
-    if (getDistanceCM(front_sensor) < 20) {
-      allStop();
-      return true;
-    }
+  if (getDistanceCM(front_sensor) < 20) {
+    return true;
   }
 
-  if (lastCommand == BACKWARD) {
-    if (getDistanceCM(back_sensor) < 20) {
-      allStop();
-      return true;
-    }
+  if (getDistanceCM(back_sensor) < 20) {
+    return true;
   }
 
   return false;
