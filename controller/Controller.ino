@@ -7,6 +7,7 @@
 #define REMOTE_CONTROL 100
 #define AIMODE1 101
 #define FOLLOW_LINE_MODE 102
+#define FOLLOW_GREEN_MODE 103
 
 // Sensor defines and constants
 #define TO_CM 29
@@ -56,6 +57,7 @@ const String START_WEBCAM = "startWebcam";
 const String RC = "remoteControl";
 const String AI1 = "aiMode1";
 const String FOLLOW_LINE = "followLine";
+const String FOLLOW_GREEN = "followGreen";
 const String CLEAR_LOG = "clearLog";
 const String GET_SID = "getSID";
 const String SET_TIME = "setTime";
@@ -118,21 +120,20 @@ void setup()
   // Start log
   FileSystem.begin();
   log("System started");
-  
+
   randomSeed(analogRead(0)); // reading unused pin is fairly random
 }
 
 void loop()
 {
-
-  if (mode == REMOTE_CONTROL) {
-    checkSensorsForObstacle();
+  if (checkSensorsForObstacle()) {
+    allStop();
   } else if (mode == AIMODE1) {
     aiMode1();
   } else if (mode == FOLLOW_LINE_MODE) {
-    if (!checkSensorsForObstacle()) {
-      lineFollowingMode();
-    }
+    lineFollowingMode();
+  } else if (mode == FOLLOW_GREEN_MODE) {
+    followGreenMode();
   }
   
   // There is a new client?
@@ -144,7 +145,7 @@ void loop()
     // read the command from the client
     String command = client.readString();
     command.trim(); //kill whitespace
-    
+
     // expire session on timeout
     if (millis() - session_set_time > SESSION_TIMEOUT) sid = -1;    
   
@@ -215,19 +216,26 @@ void loop()
 /**
 ***   Command Interpreters
 **/
-void switchMode(String command) {
+void switchMode(String command, YunClient client) {
   if (command == RC) {
     mode = REMOTE_CONTROL;
+    client.print("Current Mode: Remote Control Mode");
     allStop();
 
   } else if (command == AI1) {
     mode = AIMODE1;
+    client.print("Current Mode: AI Mode");
     forward();
 
   } else if (command == FOLLOW_LINE) {
     allStop();
     mode = FOLLOW_LINE_MODE;
-    lineFollowingMode();
+    client.print("Current Mode: Line Following Mode");
+
+  } else if (command == FOLLOW_GREEN) {
+    allStop();
+    mode = FOLLOW_GREEN_MODE;
+    client.print("Current Mode: Follow Green Mode");
   }
 }
 
@@ -300,21 +308,57 @@ void processSpeedCommand(String command, YunClient client) {
 **/
 void lineFollowingMode() {
   Process p;
-  p.runShellCommand("python /root/image-processing/image-processing.py");
+  p.runShellCommand("nice -n -19 python /root/image-processing/follow-line.pyo");
 
   char result[1];
   if (p.available() > 0) {
     result[0] = p.read();
+    log(result[0]);
   }
 
-  speed = 150;
+  p.close();
+  speed = 170;
 
   if (result[0] == 'F') {
     forward();
+    log("Line Following: Forward");
   } else if (result[0] == 'R') {
-    turnRight(150);
+    turnRight(200);
+    log("Line Following: Right");
   } else if (result[0] == 'L') {
-    turnLeft(150);
+    turnLeft(200);
+    log("Line Following: Left");
+  } else if (result[0] == 'S') {
+    allStop();
+    log("Line Following: Stop");
+  }
+}
+
+void followGreenMode() {
+  Process p;
+  p.runShellCommand("nice -n -19 python /root/image-processing/follow-green.pyo");
+
+  char result[1];
+  if (p.available() > 0) {
+    result[0] = p.read();
+    log(result[0]);
+  }
+
+  p.close();
+  speed = 170;
+
+  if (result[0] == 'F') {
+    forward();
+    log("Follow Green Mode: Forward");
+  } else if (result[0] == 'R') {
+    turnRight(200);
+    log("Follow Green Mode: Right");
+  } else if (result[0] == 'L') {
+    turnLeft(200);
+    log("Follow Green Mode: Left");
+  } else if (result[0] == 'S') {
+    allStop();
+    log("Follow Green Mode: Stop");
   }
 }
 
@@ -446,18 +490,12 @@ int getDistanceCM(struct HCSR04 sensor) {
 }
 
 bool checkSensorsForObstacle() {
-  if (lastCommand == FORWARD) {
-    if (getDistanceCM(front_sensor) < 20) {
-      allStop();
-      return true;
-    }
+  if (getDistanceCM(front_sensor) < 20) {
+    return true;
   }
 
-  if (lastCommand == BACKWARD) {
-    if (getDistanceCM(back_sensor) < 20) {
-      allStop();
-      return true;
-    }
+  if (getDistanceCM(back_sensor) < 20) {
+    return true;
   }
 
   return false;

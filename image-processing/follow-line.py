@@ -8,7 +8,7 @@ def main(argv):
     try:
         opts, args = getopt.getopt(argv, "i:d")
     except getopt.GetoptError:
-        print 'image-processing.py -i <inputfile> -d <debug>'
+        print 'follow-line.py -i <inputfile> -d <debug>'
         sys.exit(2)
 
     for opt, arg in opts:
@@ -32,11 +32,13 @@ def main(argv):
     leftscore = 0
     rightscore = 0
 
+    pix = image_file.load();
+
     for i in range(0, height-2):
         for j in range(0, half):
-            leftscore += image_file.getpixel((j,i))
+            leftscore += pix[j,i]
         for j in range(half+1, width-1):
-            rightscore += image_file.getpixel((j,i))
+            rightscore += pix[j,i]
 
     if (debug) :
         print("Left Score: " + str(leftscore))
@@ -51,7 +53,7 @@ def main(argv):
         if score > delta:
             print("RIGHT")
         else:
-            print("STRAIGHT")
+            print("FORWARD")
     else:
         score = float(rightscore) / float(leftscore)
         if (debug) :
@@ -59,7 +61,7 @@ def main(argv):
         if score > delta:
             print("LEFT")
         else:
-            print("STRAIGHT")
+            print("FORWARD")
 
 if __name__ == "__main__":
    main(sys.argv[1:])
