@@ -104,31 +104,20 @@ void setup()
   // Start log
   FileSystem.begin();
   log("System started");
-  
+
   randomSeed(analogRead(0)); // reading unused pin is fairly random
 }
 
 void loop()
 {
-
-  if (mode == REMOTE_CONTROL) {
-    checkSensorsForObstacle();
+  if (checkSensorsForObstacle()) {
+    allStop();
   } else if (mode == AIMODE1) {
     aiMode1();
   } else if (mode == FOLLOW_LINE_MODE) {
-    if (!checkSensorsForObstacle()) {
-      lineFollowingMode();
-    } else {
-      allStop();
-      mode == REMOTE_CONTROL;
-    } 
-  }else if (mode == FOLLOW_GREEN_MODE) {
-    if (!checkSensorsForObstacle()) {
-      followGreenMode();
-    } else {
-      allStop();
-      mode == REMOTE_CONTROL;
-    }
+    lineFollowingMode();
+  } else if (mode == FOLLOW_GREEN_MODE) {
+    followGreenMode();
   }
 
   // There is a new client?
@@ -179,7 +168,7 @@ void loop()
 void switchMode(String command, YunClient client) {
   if (command == RC) {
     mode = REMOTE_CONTROL;
-    client.print("Entering Remote Control Mode");
+    client.print("Current Mode: Remote Control Mode");
     allStop();
 
   } else if (command == AI1) {
@@ -192,7 +181,7 @@ void switchMode(String command, YunClient client) {
     mode = FOLLOW_LINE_MODE;
     client.print("Current Mode: Line Following Mode");
     lineFollowingMode();
-    
+
   } else if (command == FOLLOW_GREEN) {
     allStop();
     mode = FOLLOW_GREEN_MODE;
@@ -269,6 +258,10 @@ void processSpeedCommand(String command, YunClient client) {
 ***   Modes
 **/
 void lineFollowingMode() {
+  if (checkSensorsForObstacle()) {
+    return;
+  }
+
   Process p;
   p.runShellCommand("nice -n -19 python /root/image-processing/follow-line.py");
 
@@ -297,6 +290,10 @@ void lineFollowingMode() {
 }
 
 void followGreenMode() {
+  if (checkSensorsForObstacle()) {
+    return;
+  }
+
   Process p;
   p.runShellCommand("nice -n -19 python /root/image-processing/follow-green.py");
 
@@ -421,13 +418,29 @@ void startWebcam() {
 
 void log(String msg) {
   File msgLog = FileSystem.open(LOG_PATH, FILE_APPEND);
-  msgLog.println(msg);
+  msgLog.println(getTimeStamp() + " - " + msg);
   msgLog.close();
 }
 
 void clearLog() {
   File msgLog = FileSystem.open(LOG_PATH, FILE_WRITE); // write clears file
   msgLog.close();
+}
+
+String getTimeStamp() {
+  String result;
+  Process time;
+  time.begin("date");
+  time.addParameter("+%D-%T");  
+  time.run(); 
+
+  while(time.available()>0) {
+    char c = time.read();
+    if(c != '\n')
+      result += c;
+  }
+
+  return result;
 }
 
 /**
