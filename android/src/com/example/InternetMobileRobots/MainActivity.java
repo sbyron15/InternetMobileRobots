@@ -79,7 +79,6 @@ public class MainActivity extends ActionBarActivity {
 
 			@Override
 			public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-				// TODO Auto-generated method stub
 				switch(progress) {
 				
 					case 0: new MyAsyncTask().execute(Command.setSlowSpeed.toString());
@@ -93,18 +92,6 @@ public class MainActivity extends ActionBarActivity {
 							break;
 					default: break;
 				}
-			}
-
-			@Override
-			public void onStartTrackingTouch(SeekBar seekBar) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void onStopTrackingTouch(SeekBar seekBar) {
-				// TODO Auto-generated method stub
-				
 			}
 		});
 	}
@@ -121,7 +108,6 @@ public class MainActivity extends ActionBarActivity {
 			
 			@Override
 			public boolean onTouch(View v, MotionEvent event) {
-				// TODO Auto-generated method stub
 				if (event.getAction() == MotionEvent.ACTION_DOWN){
 					Log.d("Up Pressed", "Telling robot to start moving forward");
 					new MyAsyncTask().execute(Command.moveForward.toString());
@@ -137,7 +123,6 @@ public class MainActivity extends ActionBarActivity {
 			
 			@Override
 			public boolean onTouch(View v, MotionEvent event) {
-				// TODO Auto-generated method stub
 				if (event.getAction() == MotionEvent.ACTION_DOWN){
 					Log.d("Down Pressed", "Telling robot to start moving backwards");
 					new MyAsyncTask().execute(Command.moveBackward.toString());
@@ -153,7 +138,6 @@ public class MainActivity extends ActionBarActivity {
 			
 			@Override
 			public boolean onTouch(View v, MotionEvent event) {
-				// TODO Auto-generated method stub
 				if (event.getAction() == MotionEvent.ACTION_DOWN){
 					Log.d("Left Pressed", "Telling robot to start turning left");
 					new MyAsyncTask().execute(Command.leftTurn.toString());
@@ -169,7 +153,6 @@ public class MainActivity extends ActionBarActivity {
 			
 			@Override
 			public boolean onTouch(View v, MotionEvent event) {
-				// TODO Auto-generated method stub
 				if (event.getAction() == MotionEvent.ACTION_DOWN){
 					Log.d("Right Pressed", "Telling robot to start turning right");
 					new MyAsyncTask().execute(Command.rightTurn.toString());
@@ -186,10 +169,9 @@ public class MainActivity extends ActionBarActivity {
 	}
 	
 	private void sendRequest(String action){
-		uri = "http://192.168.240.1/arduino/" + action;//http://192.168.2.24//MidtermProblems/ajaxTest.php
+		uri = "http://192.168.240.1/arduino/" + action;
 		try {
 			HttpResponse response = httpClient.execute(new HttpGet(uri));
-			//t1.setText(response.toString());
 			Log.d("http response:", response.toString());
 			if(response.getStatusLine().getStatusCode() == 200){
 				HttpEntity entity = response.getEntity();
@@ -209,16 +191,14 @@ public class MainActivity extends ActionBarActivity {
 				     @Override
 				     public void run() {
 
-				    	 //stuff that updates ui
+				    	 //updates ui
 				    	 t1.setText(a.toString());
 				    }
 				});
 			}
 		} catch (ClientProtocolException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -227,7 +207,6 @@ public class MainActivity extends ActionBarActivity {
 
 		@Override
 		protected Double doInBackground(String... params) {
-			// TODO Auto-generated method stub
 			sendRequest(params[0]);
 			return null;
 		}
