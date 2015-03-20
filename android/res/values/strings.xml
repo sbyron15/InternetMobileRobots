@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">testApp2</string>
+    <string name="hello_world">Default Message</string>
+    <string name="action_settings">Settings</string>
+    <string name="button_up">Forward</string>
+    <string name="button_down">Backward</string>
+    <string name="button_left">Left</string>
+    <string name="button_right">Right</string>
+
+</resources>

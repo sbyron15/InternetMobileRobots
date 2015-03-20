@@ -1,0 +1,63 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context="com.example.InternetMobileRobots.MainActivity" >
+
+    <TextView
+        android:id="@+id/textView1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/hello_world" />
+
+    <SeekBar
+        android:id="@+id/seekBar1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/buttonLEFT"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="74dp" 
+        android:max="2"/>
+
+    <Button
+        android:id="@+id/buttonUP"
+        android:layout_width="140dp"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/buttonDOWN"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="60dp"
+        android:text="@string/button_up" />
+
+    <Button
+        android:id="@+id/buttonRIGHT"
+        android:layout_width="140dp"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/buttonLEFT"
+        android:layout_alignBottom="@+id/buttonLEFT"
+        android:layout_alignRight="@+id/seekBar1"
+        android:text="@string/button_right" />
+
+    <Button
+        android:id="@+id/buttonLEFT"
+        android:layout_width="140dp"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/buttonDOWN"
+        android:layout_alignParentLeft="true"
+        android:layout_marginBottom="5dp"
+        android:text="@string/button_left" />
+
+    <Button
+        android:id="@+id/buttonDOWN"
+        android:layout_width="140dp"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/seekBar1"
+        android:layout_alignLeft="@+id/buttonUP"
+        android:layout_marginBottom="70dp"
+        android:text="@string/button_down" />
+
+</RelativeLayout>
