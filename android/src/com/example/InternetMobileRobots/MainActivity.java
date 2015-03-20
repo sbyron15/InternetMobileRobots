@@ -219,7 +219,6 @@ public class MainActivity extends ActionBarActivity {
 				     @Override
 				     public void run() {
 
-				    	 //stuff that updates ui
 				    	 t1.setText(a.toString());
 				    }
 				});
