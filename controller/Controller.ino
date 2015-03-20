@@ -111,7 +111,7 @@ void setup()
 void loop()
 {
   if (checkSensorsForObstacle()) {
-    allStop();
+    //allStop();
   } else if (mode == AIMODE1) {
     aiMode1();
   } else if (mode == FOLLOW_LINE_MODE) {
@@ -262,21 +262,26 @@ void lineFollowingMode() {
   char result[1];
   if (p.available() > 0) {
     result[0] = p.read();
-    log(result[0]);
   }
 
   p.close();
-  speed = 170;
+  speed = 255;
 
   if (result[0] == 'F') {
     forward();
     log("Line Following: Forward");
+    delay(800);
+    allStop();
   } else if (result[0] == 'R') {
-    turnRight(200);
+    turnRight(255);
     log("Line Following: Right");
+    delay(1500);
+    allStop();
   } else if (result[0] == 'L') {
-    turnLeft(200);
+    turnLeft(255);
     log("Line Following: Left");
+    delay(1500);
+    allStop();
   } else if (result[0] == 'S') {
     allStop();
     log("Line Following: Stop");
@@ -290,20 +295,19 @@ void followGreenMode() {
   char result[1];
   if (p.available() > 0) {
     result[0] = p.read();
-    log(result[0]);
   }
 
   p.close();
-  speed = 170;
+  speed = 200;
 
   if (result[0] == 'F') {
     forward();
     log("Follow Green Mode: Forward");
   } else if (result[0] == 'R') {
-    turnRight(200);
+    turnRight(255);
     log("Follow Green Mode: Right");
   } else if (result[0] == 'L') {
-    turnLeft(200);
+    turnLeft(255);
     log("Follow Green Mode: Left");
   } else if (result[0] == 'S') {
     allStop();
@@ -330,10 +334,10 @@ void aiMode1() {
 **/
 void backward() {
   // Motor Controller 1 Backwards
-  analogWrite(B1M1, speed);
+  analogWrite(B1M1, speed+20);
   analogWrite(B1M2, 0);
   // Motor Controller 2 Backwards
-  analogWrite(B2M1, speed);
+  analogWrite(B2M1, speed-20);
   analogWrite(B2M2, 0);
 
   lastCommand = BACKWARD;
@@ -343,10 +347,10 @@ void forward() {
   // Motor Controller 1 Forwards
 
   analogWrite(B1M1, 0);
-  analogWrite(B1M2, speed);
+  analogWrite(B1M2, speed+20);
   // Motor Controller 2 Forwards
   analogWrite(B2M1, 0);
-  analogWrite(B2M2, speed);
+  analogWrite(B2M2, speed-20);
 
   lastCommand = FORWARD;
 }
@@ -365,10 +369,10 @@ void allStop() {
 void turnRight(int turn_speed) {
   // Motor Controller 1 Forwards
   analogWrite(B1M1, 0);
-  analogWrite(B1M2, turn_speed);
+  analogWrite(B1M2, turn_speed+20);
 
   // Motor Controller 2 Backwards
-  analogWrite(B2M1, turn_speed);
+  analogWrite(B2M1, turn_speed-20);
   analogWrite(B2M2, 0);
 
   lastCommand = RIGHT;
@@ -376,12 +380,12 @@ void turnRight(int turn_speed) {
 
 void turnLeft(int turn_speed) {
   // Motor Controller 1 Forwards
-  analogWrite(B1M1, turn_speed);
+  analogWrite(B1M1, turn_speed+20);
   analogWrite(B1M2, 0);
 
   // Motor Controller 2 Backwards
   analogWrite(B2M1, 0);
-  analogWrite(B2M2, turn_speed);
+  analogWrite(B2M2, turn_speed-20);
 
   lastCommand = LEFT;
 }
