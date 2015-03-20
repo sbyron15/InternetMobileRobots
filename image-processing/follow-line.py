@@ -25,43 +25,50 @@ def main(argv):
         snapshot = io.BytesIO(url.read())
         image_file = Image.open(snapshot)
 
-    image_file = image_file.convert('1') # convert image to black and white
+    #image_file = image_file.convert('1') # convert image to black and white
     (width,height) = image_file.size
-    half = (width/2) -1
+    leftBoundary = 2*(width/5)
+    rightBoundary = width-leftBoundary
 
-    leftscore = 0
-    rightscore = 0
+    leftscore = 1
+    rightscore = 1
+    centerscore = 1
 
     pix = image_file.load();
 
     for i in range(0, height-2):
-        for j in range(0, half):
-            leftscore += pix[j,i]
-        for j in range(half+1, width-1):
-            rightscore += pix[j,i]
+        for j in range(0, leftBoundary):
+            (r,g,b) = pix[j,i]
+            if r<100 and g<100 and b<100:
+                leftscore+=1
+                if (debug) :
+                        print (r,g,b)
+        for j in range(leftBoundary+1, rightBoundary):
+            (r,g,b) = pix[j,i]
+            if r<100 and g<100 and b<100:
+                centerscore+=1
+                if (debug) :
+                        print (r,g,b)
+        for j in range(rightBoundary+1, width-1):
+            (r,g,b) = pix[j,i]
+            if r<100 and g<100 and b<100:
+                rightscore+=1
+                if (debug) :
+                        print pix[j,i]
 
     if (debug) :
         print("Left Score: " + str(leftscore))
+        print("Center Score: " + str(centerscore))
         print("Right Score: " + str(rightscore))
 
-    delta = 1.05
-
-    if leftscore > rightscore:
-        score = float(leftscore) / float(rightscore)
-        if (debug) :
-            print score
-        if score > delta:
-            print("RIGHT")
-        else:
-            print("FORWARD")
+    if (centerscore+leftscore+rightscore)<600:
+        print("STOP")
+    elif centerscore>leftscore and centerscore>rightscore:
+        print("FORWARD")
+    elif leftscore > rightscore:
+        print("LEFT")
     else:
-        score = float(rightscore) / float(leftscore)
-        if (debug) :
-            print score
-        if score > delta:
-            print("LEFT")
-        else:
-            print("FORWARD")
+        print("RIGHT")
 
 if __name__ == "__main__":
    main(sys.argv[1:])
