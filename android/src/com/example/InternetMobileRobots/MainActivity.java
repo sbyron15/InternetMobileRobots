@@ -13,8 +13,11 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 
 import android.support.v7.app.ActionBarActivity;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -50,12 +53,17 @@ public class MainActivity extends ActionBarActivity {
 		addSliderListener();
 		httpClient = new DefaultHttpClient();
 		uri = "";
+		PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
+		
+		
 	}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.main, menu);
+		
+		
 		return true;
 	}
 
@@ -64,8 +72,14 @@ public class MainActivity extends ActionBarActivity {
 		// Handle action bar item clicks here. The action bar will
 		// automatically handle clicks on the Home/Up button, so long
 		// as you specify a parent activity in AndroidManifest.xml.
+		
+
+		
 		int id = item.getItemId();
 		if (id == R.id.action_settings) {
+			
+			Intent intent = new Intent(this, SettingsActivity.class);
+			startActivity(intent);
 			return true;
 		}
 		return super.onOptionsItemSelected(item);
@@ -79,7 +93,6 @@ public class MainActivity extends ActionBarActivity {
 
 			@Override
 			public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-				// TODO Auto-generated method stub
 				switch(progress) {
 				
 					case 0: new MyAsyncTask().execute(Command.setSlowSpeed.toString());
@@ -121,7 +134,6 @@ public class MainActivity extends ActionBarActivity {
 			
 			@Override
 			public boolean onTouch(View v, MotionEvent event) {
-				// TODO Auto-generated method stub
 				if (event.getAction() == MotionEvent.ACTION_DOWN){
 					Log.d("Up Pressed", "Telling robot to start moving forward");
 					new MyAsyncTask().execute(Command.moveForward.toString());
@@ -137,7 +149,6 @@ public class MainActivity extends ActionBarActivity {
 			
 			@Override
 			public boolean onTouch(View v, MotionEvent event) {
-				// TODO Auto-generated method stub
 				if (event.getAction() == MotionEvent.ACTION_DOWN){
 					Log.d("Down Pressed", "Telling robot to start moving backwards");
 					new MyAsyncTask().execute(Command.moveBackward.toString());
@@ -153,7 +164,6 @@ public class MainActivity extends ActionBarActivity {
 			
 			@Override
 			public boolean onTouch(View v, MotionEvent event) {
-				// TODO Auto-generated method stub
 				if (event.getAction() == MotionEvent.ACTION_DOWN){
 					Log.d("Left Pressed", "Telling robot to start turning left");
 					new MyAsyncTask().execute(Command.leftTurn.toString());
@@ -169,7 +179,6 @@ public class MainActivity extends ActionBarActivity {
 			
 			@Override
 			public boolean onTouch(View v, MotionEvent event) {
-				// TODO Auto-generated method stub
 				if (event.getAction() == MotionEvent.ACTION_DOWN){
 					Log.d("Right Pressed", "Telling robot to start turning right");
 					new MyAsyncTask().execute(Command.rightTurn.toString());
@@ -186,10 +195,11 @@ public class MainActivity extends ActionBarActivity {
 	}
 	
 	private void sendRequest(String action){
-		uri = "http://192.168.240.1/arduino/" + action;//http://192.168.2.24//MidtermProblems/ajaxTest.php
+		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+		String location = sharedPref.getString("location", "undefined");
+		uri = "http://" + location + "/arduino/" + action;
 		try {
 			HttpResponse response = httpClient.execute(new HttpGet(uri));
-			//t1.setText(response.toString());
 			Log.d("http response:", response.toString());
 			if(response.getStatusLine().getStatusCode() == 200){
 				HttpEntity entity = response.getEntity();
@@ -215,10 +225,8 @@ public class MainActivity extends ActionBarActivity {
 				});
 			}
 		} catch (ClientProtocolException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -227,7 +235,6 @@ public class MainActivity extends ActionBarActivity {
 
 		@Override
 		protected Double doInBackground(String... params) {
-			// TODO Auto-generated method stub
 			sendRequest(params[0]);
 			return null;
 		}

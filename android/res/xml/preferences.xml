@@ -1,0 +1,5 @@
+
+    <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+        <EditTextPreference android:dialogTitle="@string/location" android:defaultValue="android.local" android:title="@string/location" android:key="location">
+        </EditTextPreference>
+    </PreferenceScreen>
