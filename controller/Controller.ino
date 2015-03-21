@@ -43,9 +43,9 @@ const int ERR_BAD_CMD = 1; // malformed/unrecognized command
 const int ERR_NO_SID = 2; // no sid provided when needed
 const int ERR_BAD_SID = 3; // wrong sid provided
 const int ERR_SID_EXP = 4;  // sid expired, no session is in progress
-const int ERR_BAD_SID_REQ = 5; // getSID called, but unexpired sid already exists
+const int ERR_BAD_SID_REQ = 5; // getSID called, but unexpired sid alremilady exists
 
-const int SESSION_TIMEOUT = 60000; // session times out in one minute
+const unsigned long SESSION_TIMEOUT = 60000; // session times out in one minute
 
 long sid = -1;
 unsigned long session_set_time = 0; // indicates time from millis() that session was last refreshed
@@ -84,40 +84,38 @@ void setup()
 }
 
 void loop()
-{
-  int error = ERR_NONE;
-
+{ 
   // There is a new client?
   YunClient client = server.accept();
   if (client) {
     client.setTimeout(2); // Maximum amount of time to wait for the stream
+    int error = ERR_NONE;
 
     // read the command from the client
     String command = client.readString();
     command.trim(); //kill whitespace
-
-    // process any speed commands
-    processSpeedCommand(command, client);
-
-    // process any direction commands
-    processDirectionCommand(command, client);
-
-    /*
+    
     // expire session on timeout
-    if (millis() - session_set_time > SESSION_TIMEOUT) sid = -1;
+    if (millis() - session_set_time > SESSION_TIMEOUT) {
+      log("Session expired");
+      sid = -1;
+    }
 
     if (command == STATUS) { // always allow status commands
       log("Received command: " + command);
       client.print(lastCommand + ":" + String(speed));
-    } else if (command == GET_SID) { //always allow attempts to get sid
+    } 
+    else if (command == GET_SID) { // always allow attempts to get sid
       log("Received command: " + command);
       if (sid == -1) {
         sid = random(0x7FFFFFFFL);
         client.print(String(sid));
-      } else {
+      } 
+      else {
         error = ERR_BAD_SID_REQ;
       }
-    } else {
+    } 
+    else {
       long receivedSID;
 
       int sidSlashIndex = command.lastIndexOf('/');
@@ -133,29 +131,30 @@ void loop()
       if (error == ERR_NONE) {
         log("Received command: " + command);
         session_set_time = millis(); // refresh session
-
-      } if (command.startsWith(SET_TIME)) {
-        unix_time = command.substring(command.indexOf('/') + 1).toInt();
-        millis_time_set = millis();
-        client.print("time=" + String(unix_time));
-      } else if (command == CLEAR_LOG) {
-        clearLog();
-        client.print("Log cleared");
+         
+        if (command.startsWith(SET_TIME)) {
+          unix_time = command.substring(command.indexOf('/') + 1).toInt();
+          millis_time_set = millis();
+          client.print("time=" + String(unix_time));
+        } 
+        else if (command == CLEAR_LOG) {
+          clearLog();
+          client.print("Log cleared");
+        } else {
+          // process any speed commands
+          processSpeedCommand(command, client);
+          // process any direction commands
+          processDirectionCommand(command, client);
+        }
       }
-
-      // process any speed commands
-      processSpeedCommand(command, client);
-
-      // process any direction commands
-      processDirectionCommand(command, client);
     }
-    */
+    
+    if (error != ERR_NONE) {
+      client.print(getErrorString(error));
+      log("Error id=" + String(error) + " on received command \"" + command + "\"");
+    }
   }
 
-  /**if (error != ERR_NONE) {
-    client.print(getErrorString(error));
-    log("Error id=" + String(error) + " on received command \"" + command + "\"");
-  }**/
   client.stop();
 }
 
