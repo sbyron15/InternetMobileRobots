@@ -38,7 +38,7 @@ const int B2M2 = 10;
 YunServer server;
 
 // Initial speed
-int speed = 170;
+int speed = 200;
 
 // Command constants
 String lastCommand = "";
@@ -135,7 +135,7 @@ void loop()
   } else if (mode == FOLLOW_GREEN_MODE) {
     followGreenMode();
   }
-  
+
   // There is a new client?
   YunClient client = server.accept();
   if (client) {
@@ -147,23 +147,23 @@ void loop()
     command.trim(); //kill whitespace
 
     // expire session on timeout
-    if (millis() - session_set_time > SESSION_TIMEOUT) sid = -1;    
-  
-    if (command == STATUS){ // always allow status commands
+    if (millis() - session_set_time > SESSION_TIMEOUT) sid = -1;
+
+    if (command == STATUS) { // always allow status commands
       log("Received command: " + command);
       client.print(lastCommand + ":" + String(speed));
     } else if (command == GET_SID) { //always allow attempts to get sid
-      log("Received command: " + command);      
-      if (sid == -1){
+      log("Received command: " + command);
+      if (sid == -1) {
         sid = random(0x7FFFFFFFL);
         client.print(String(sid));
       } else {
         error = ERR_BAD_SID_REQ;
       }
-    } else {        
-      long receivedSID;
-      
-      int sidSlashIndex = command.lastIndexOf('/');      
+    } else {
+      /*long receivedSID;
+
+      int sidSlashIndex = command.lastIndexOf('/');
       if (sidSlashIndex == -1 || sidSlashIndex == command.length() - 1) error = ERR_NO_SID;
       else if (sid == -1) error = ERR_SID_EXP;
       else {
@@ -171,20 +171,20 @@ void loop()
         receivedSID = command.substring(sidSlashIndex + 1).toInt();
         command = command.substring(0, sidSlashIndex);
         if (receivedSID != sid) error = ERR_BAD_SID;
-      }
+      }*/
 
-      if (error == ERR_NONE){
+      if (error == ERR_NONE) {
         log("Received command: " + command);
         session_set_time = millis(); // refresh session
-        
+
         // detect a mode switch
-        switchMode(command);
-    
+        switchMode(command, client);
+
         // misc commands
-        
+
         if (command == START_WEBCAM) {
           startWebcam();
-        } else if (command.startsWith(SET_TIME)){
+        } else if (command.startsWith(SET_TIME)) {
           unix_time = command.substring(command.indexOf('/') + 1).toInt();
           millis_time_set = millis();
           client.print("time=" + String(unix_time));
@@ -192,10 +192,10 @@ void loop()
           clearLog();
           client.print("Log cleared");
         }
-    
+
         // process any speed commands
         processSpeedCommand(command, client);
-    
+
         if (mode == REMOTE_CONTROL) {
           // process any direction commands
           processDirectionCommand(command, client);
@@ -204,7 +204,7 @@ void loop()
         }
       }
     }
-    
+
     if (error != ERR_NONE) {
       client.print(getErrorString(error));
       log("Error id=" + String(error) + " on received command \"" + command + "\"");
@@ -263,8 +263,8 @@ void processSpeedCommand(String command, YunClient client) {
 
   if (command == SPEED_UP) {
     speed = speed + 10;
-    if (speed > 255) {
-      speed = 255;
+    if (speed > 200) {
+      speed = 200;
     }
     printSpeed = true;
     replayLastDirection();
@@ -278,17 +278,17 @@ void processSpeedCommand(String command, YunClient client) {
     replayLastDirection();
 
   } else if (command == FAST) {
-    speed = 255;
+    speed = 200;
     printSpeed = true;
     replayLastDirection();
 
   } else if (command == SLOW) {
-    speed = 150;
+    speed = 140;
     printSpeed = true;
     replayLastDirection();
 
   } else if (command == MEDIUM) {
-    speed = 200;
+    speed = 170;
     printSpeed = true;
     replayLastDirection();
 
@@ -316,7 +316,7 @@ void lineFollowingMode() {
   }
 
   p.close();
-  speed = 255;
+  speed = 200;
 
   if (result[0] == 'F') {
     forward();
@@ -354,12 +354,18 @@ void followGreenMode() {
   if (result[0] == 'F') {
     forward();
     log("Follow Green Mode: Forward");
+    delay(800);
+    allStop();
   } else if (result[0] == 'R') {
     turnRight(255);
     log("Follow Green Mode: Right");
+    delay(800);
+    allStop();
   } else if (result[0] == 'L') {
     turnLeft(255);
     log("Follow Green Mode: Left");
+    delay(800);
+    allStop();
   } else if (result[0] == 'S') {
     allStop();
     log("Follow Green Mode: Stop");
@@ -384,29 +390,58 @@ void aiMode1() {
 ***   Motor Controls
 **/
 void backward() {
+  pinMode(B1M1, OUTPUT);
+  pinMode(B1M2, OUTPUT);
+  pinMode(B2M1, OUTPUT);
+  pinMode(B2M2, OUTPUT);
+  
+  digitalWrite(B1E1, HIGH);
+  digitalWrite(B1E2, HIGH);
+  digitalWrite(B2E1, HIGH);
+  digitalWrite(B2E2, HIGH);
+  
   // Motor Controller 1 Backwards
-  analogWrite(B1M1, speed+20);
+  analogWrite(B1M1, speed + 55);
   analogWrite(B1M2, 0);
   // Motor Controller 2 Backwards
-  analogWrite(B2M1, speed-20);
+  analogWrite(B2M1, speed - 55);
   analogWrite(B2M2, 0);
 
   lastCommand = BACKWARD;
 }
 
 void forward() {
+  pinMode(B1M1, OUTPUT);
+  pinMode(B1M2, OUTPUT);
+  pinMode(B2M1, OUTPUT);
+  pinMode(B2M2, OUTPUT);
+  
+  digitalWrite(B1E1, HIGH);
+  digitalWrite(B1E2, HIGH);
+  digitalWrite(B2E1, HIGH);
+  digitalWrite(B2E2, HIGH);
+  
   // Motor Controller 1 Forwards
-
   analogWrite(B1M1, 0);
-  analogWrite(B1M2, speed+20);
+  analogWrite(B1M2, speed + 55);
   // Motor Controller 2 Forwards
   analogWrite(B2M1, 0);
-  analogWrite(B2M2, speed-20);
+  analogWrite(B2M2, speed - 55);
 
   lastCommand = FORWARD;
 }
 
 void allStop() {
+  pinMode(B1M1, OUTPUT);
+  pinMode(B1M2, OUTPUT);
+  pinMode(B2M1, OUTPUT);
+  pinMode(B2M2, OUTPUT);
+  
+  digitalWrite(B1E1, HIGH);
+  digitalWrite(B1E2, HIGH);
+  digitalWrite(B2E1, HIGH);
+  digitalWrite(B2E2, HIGH);
+  
   // Motor Controller 1 Stop
   analogWrite(B1M1, 0);
   analogWrite(B1M2, 0);
@@ -418,25 +453,45 @@ void allStop() {
 }
 
 void turnRight(int turn_speed) {
+  pinMode(B1M1, OUTPUT);
+  pinMode(B1M2, OUTPUT);
+  pinMode(B2M1, OUTPUT);
+  pinMode(B2M2, OUTPUT);
+  
+  digitalWrite(B1E1, HIGH);
+  digitalWrite(B1E2, HIGH);
+  digitalWrite(B2E1, HIGH);
+  digitalWrite(B2E2, HIGH);
+  
   // Motor Controller 1 Forwards
   analogWrite(B1M1, 0);
-  analogWrite(B1M2, turn_speed+20);
+  analogWrite(B1M2, turn_speed + 55);
 
   // Motor Controller 2 Backwards
-  analogWrite(B2M1, turn_speed-20);
+  analogWrite(B2M1, turn_speed - 55);
   analogWrite(B2M2, 0);
 
   lastCommand = RIGHT;
 }
 
 void turnLeft(int turn_speed) {
+  pinMode(B1M1, OUTPUT);
+  pinMode(B1M2, OUTPUT);
+  pinMode(B2M1, OUTPUT);
+  pinMode(B2M2, OUTPUT);
+  
+  digitalWrite(B1E1, HIGH);
+  digitalWrite(B1E2, HIGH);
+  digitalWrite(B2E1, HIGH);
+  digitalWrite(B2E2, HIGH);
+  
   // Motor Controller 1 Forwards
-  analogWrite(B1M1, turn_speed+20);
+  analogWrite(B1M1, turn_speed + 55);
   analogWrite(B1M2, 0);
 
   // Motor Controller 2 Backwards
   analogWrite(B2M1, 0);
-  analogWrite(B2M2, turn_speed-20);
+  analogWrite(B2M2, turn_speed - 55);
 
   lastCommand = LEFT;
 }
@@ -465,8 +520,8 @@ void log(String msg) {
   File msgLog = FileSystem.open(LOG_PATH, FILE_APPEND);
   if (unix_time == -1)
     msgLog.println(msg);
-  else 
-    msgLog.println(String(unix_time + (millis() - millis_time_set)/1000) + ": " + msg);
+  else
+    msgLog.println(String(unix_time + (millis() - millis_time_set) / 1000) + ": " + msg);
   msgLog.close();
 }
 
@@ -475,7 +530,7 @@ void clearLog() {
   msgLog.close();
 }
 
-String getErrorString(int err_id){
+String getErrorString(int err_id) {
   return String("err=") + String(err_id);
 }
 
