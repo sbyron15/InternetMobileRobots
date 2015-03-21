@@ -8,5 +8,6 @@
     <string name="button_down">Backward</string>
     <string name="button_left">Left</string>
     <string name="button_right">Right</string>
+    <string name="location">Location</string>
 
 </resources>

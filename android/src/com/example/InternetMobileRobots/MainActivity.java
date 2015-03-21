@@ -13,8 +13,11 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 
 import android.support.v7.app.ActionBarActivity;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -50,12 +53,17 @@ public class MainActivity extends ActionBarActivity {
 		addSliderListener();
 		httpClient = new DefaultHttpClient();
 		uri = "";
+		PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
+		
+		
 	}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.main, menu);
+		
+		
 		return true;
 	}
 
@@ -64,8 +72,14 @@ public class MainActivity extends ActionBarActivity {
 		// Handle action bar item clicks here. The action bar will
 		// automatically handle clicks on the Home/Up button, so long
 		// as you specify a parent activity in AndroidManifest.xml.
+		
+
+		
 		int id = item.getItemId();
 		if (id == R.id.action_settings) {
+			
+			Intent intent = new Intent(this, SettingsActivity.class);
+			startActivity(intent);
 			return true;
 		}
 		return super.onOptionsItemSelected(item);
@@ -92,6 +106,18 @@ public class MainActivity extends ActionBarActivity {
 							break;
 					default: break;
 				}
+			}
+
+			@Override
+			public void onStartTrackingTouch(SeekBar seekBar) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void onStopTrackingTouch(SeekBar seekBar) {
+				// TODO Auto-generated method stub
+				
 			}
 		});
 	}
@@ -169,7 +195,9 @@ public class MainActivity extends ActionBarActivity {
 	}
 	
 	private void sendRequest(String action){
-		uri = "http://192.168.240.1/arduino/" + action;
+		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+		String location = sharedPref.getString("location", "undefined");
+		uri = "http://" + location + "/arduino/" + action;
 		try {
 			HttpResponse response = httpClient.execute(new HttpGet(uri));
 			Log.d("http response:", response.toString());
@@ -191,7 +219,6 @@ public class MainActivity extends ActionBarActivity {
 				     @Override
 				     public void run() {
 
-				    	 //updates ui
 				    	 t1.setText(a.toString());
 				    }
 				});
