@@ -309,7 +309,7 @@ void processSpeedCommand(String command, YunClient client) {
 void lineFollowingMode() {
   Process p;
   p.runShellCommand("nice -n -19 python /root/image-processing/follow-line.pyo");
-
+  
   char result[1];
   if (p.available() > 0) {
     result[0] = p.read();
@@ -321,17 +321,23 @@ void lineFollowingMode() {
   if (result[0] == 'F') {
     forward();
     log("Line Following: Forward");
-    delay(800);
+    
+    if (lastCommand == LEFT || lastCommand == RIGHT) {
+      delay(200);
+    } else {
+      delay(600);
+    }
+    
     allStop();
   } else if (result[0] == 'R') {
     turnRight(255);
     log("Line Following: Right");
-    delay(1500);
+    delay(800);
     allStop();
   } else if (result[0] == 'L') {
     turnLeft(255);
     log("Line Following: Left");
-    delay(1500);
+    delay(800);
     allStop();
   } else if (result[0] == 'S') {
     allStop();
@@ -465,10 +471,10 @@ void turnRight(int turn_speed) {
   
   // Motor Controller 1 Forwards
   analogWrite(B1M1, 0);
-  analogWrite(B1M2, turn_speed + 55);
+  analogWrite(B1M2, turn_speed);
 
   // Motor Controller 2 Backwards
-  analogWrite(B2M1, turn_speed - 55);
+  analogWrite(B2M1, turn_speed);
   analogWrite(B2M2, 0);
 
   lastCommand = RIGHT;
@@ -486,12 +492,12 @@ void turnLeft(int turn_speed) {
   digitalWrite(B2E2, HIGH);
   
   // Motor Controller 1 Forwards
-  analogWrite(B1M1, turn_speed + 55);
+  analogWrite(B1M1, turn_speed);
   analogWrite(B1M2, 0);
 
   // Motor Controller 2 Backwards
   analogWrite(B2M1, 0);
-  analogWrite(B2M2, turn_speed - 55);
+  analogWrite(B2M2, turn_speed);
 
   lastCommand = LEFT;
 }
