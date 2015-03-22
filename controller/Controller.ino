@@ -105,7 +105,7 @@ void loop()
       log("Received command: " + command);
       client.print(lastCommand + ":" + String(speed));
     } 
-    else if (command == GET_SID) { // always allow attempts to get sid
+    /*else if (command == GET_SID) { // always allow attempts to get sid
       log("Received command: " + command);
       if (sid == -1) {
         sid = random(0x7FFFFFFFL);
@@ -114,9 +114,9 @@ void loop()
       else {
         error = ERR_BAD_SID_REQ;
       }
-    } 
+    } */
     else {
-      long receivedSID;
+      /*long receivedSID;
 
       int sidSlashIndex = command.lastIndexOf('/');
       if (sidSlashIndex == -1 || sidSlashIndex == command.length() - 1) error = ERR_NO_SID;
@@ -128,7 +128,7 @@ void loop()
         if (receivedSID != sid) error = ERR_BAD_SID;
       }
 
-      if (error == ERR_NONE) {
+      if (error == ERR_NONE) {*/
         log("Received command: " + command);
         session_set_time = millis(); // refresh session
          
@@ -146,33 +146,57 @@ void loop()
           // process any direction commands
           processDirectionCommand(command, client);
         }
-      }
+      //}
     }
     
-    if (error != ERR_NONE) {
+    /*if (error != ERR_NONE) {
       client.print(getErrorString(error));
       log("Error id=" + String(error) + " on received command \"" + command + "\"");
-    }
+    }*/
   }
 
   client.stop();
 }
 
 void processDirectionCommand(String command, YunClient client) {
-  if (command == FORWARD) {
+  if (command.startsWith(FORWARD)) {
     forward();
+    int slashIndex = command.lastIndexOf('/');
+    if (slashIndex != -1) {
+      long wait = command.substring(slashIndex + 1).toInt();
+      delay(wait);
+      allStop();
+    }
     client.print(command);
 
-  } else if (command == BACKWARD) {
+  } else if (command.startsWith(BACKWARD)) {
     backward();
+    int slashIndex = command.lastIndexOf('/');
+    if (slashIndex != -1) {
+      long wait = command.substring(slashIndex + 1).toInt();
+      delay(wait);
+      allStop();
+    }
     client.print(command);
 
-  } else if (command == LEFT) {
+  } else if (command.startsWith(LEFT)) {
     turnLeft(255);
+    int slashIndex = command.lastIndexOf('/');
+    if (slashIndex != -1) {
+      long wait = command.substring(slashIndex + 1).toInt();
+      delay(wait);
+      allStop();
+    }
     client.print(command);
 
-  } else if (command == RIGHT) {
+  } else if (command.startsWith(RIGHT)) {
     turnRight(255);
+    int slashIndex = command.lastIndexOf('/');
+    if (slashIndex != -1) {
+      long wait = command.substring(slashIndex + 1).toInt();
+      delay(wait);
+      allStop();
+    }
     client.print(command);
   }
 }

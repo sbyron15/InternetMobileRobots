@@ -20,9 +20,11 @@ struct HCSR04
 };
 struct HCSR04 front_sensor;
 struct HCSR04 back_sensor;
+struct HCSR04 left_sensor;
+struct HCSR04 right_sensor;
 
-const int trigPinFront = 3;
-const int echoPinFront = 2;
+const int leftSensorPower = 5;
+const int rightSensorPower = 2;
 
 // Global server object
 YunServer server;
@@ -52,16 +54,31 @@ void setup() {
 
   server.begin();
 
-  front_sensor.trigPin = 3;
-  front_sensor.echoPin = 2;
-  back_sensor.trigPin = 12;
-  back_sensor.echoPin = 13;
+  front_sensor.trigPin = 9;
+  front_sensor.echoPin = 8;
+  back_sensor.trigPin = 10;
+  back_sensor.echoPin = 11;
+  left_sensor.trigPin = 6;
+  left_sensor.echoPin = 7;
+  right_sensor.trigPin = 4;
+  right_sensor.echoPin = 3;
+
 
   //setup front/back proximity sensors
   pinMode(front_sensor.trigPin, OUTPUT);
   pinMode(front_sensor.echoPin, INPUT);
   pinMode(back_sensor.trigPin, OUTPUT);
   pinMode(back_sensor.echoPin, INPUT);
+  pinMode(left_sensor.trigPin, OUTPUT);
+  pinMode(left_sensor.echoPin, INPUT);
+  pinMode(right_sensor.trigPin, OUTPUT);
+  pinMode(right_sensor.echoPin, INPUT);
+  pinMode(rightSensorPower, OUTPUT);
+  pinMode(leftSensorPower, OUTPUT);
+
+  digitalWrite(rightSensorPower, HIGH);
+  digitalWrite(leftSensorPower, HIGH);
+
 
   log("System started");
 
@@ -118,7 +135,7 @@ void switchMode(String command, YunClient client) {
   } else if (command == AI1) {
     mode = AIMODE1;
     client.print("Current Mode: AI Mode");
-    forward();
+    forward("");
     setFastSpeed();
 
   } else if (command == FOLLOW_LINE) {
@@ -150,26 +167,20 @@ void lineFollowingMode() {
   p.close();
 
   if (result[0] == 'F') {
-    forward();
     log("Line Following: Forward");
 
     if (lastCommand == LEFT || lastCommand == RIGHT) {
-      delay(200);
+      forward("200");
     } else {
-      delay(600);
+      forward("600");
     }
 
-    allStop();
   } else if (result[0] == 'R') {
-    turnRight();
+    turnRight("800");
     log("Line Following: Right");
-    delay(800);
-    allStop();
   } else if (result[0] == 'L') {
-    turnLeft();
+    turnLeft("800");
     log("Line Following: Left");
-    delay(800);
-    allStop();
   } else if (result[0] == 'S') {
     allStop();
     log("Line Following: Stop");
@@ -188,20 +199,14 @@ void followGreenMode() {
   p.close();
 
   if (result[0] == 'F') {
-    forward();
+    forward("800");
     log("Follow Green Mode: Forward");
-    delay(800);
-    allStop();
   } else if (result[0] == 'R') {
-    turnRight();
+    turnRight("800");
     log("Follow Green Mode: Right");
-    delay(800);
-    allStop();
   } else if (result[0] == 'L') {
-    turnLeft();
+    turnLeft("800");
     log("Follow Green Mode: Left");
-    delay(800);
-    allStop();
   } else if (result[0] == 'S') {
     allStop();
     log("Follow Green Mode: Stop");
@@ -209,7 +214,45 @@ void followGreenMode() {
 }
 
 void aiMode1() {
-  // TODO
+  int distance = 10;
+  delay(1000);
+  if (checkSensorsForObstacle(distance)) {
+    allStop();
+
+
+    int fDistance = getDistanceCM(front_sensor);
+    int bDistance = getDistanceCM(back_sensor);
+    int lDistance = getDistanceCM(left_sensor);
+    int rDistance = getDistanceCM(right_sensor);
+
+    /*Checking for only 1 tripped */
+    if (fDistance <= distance && bDistance > distance && lDistance > distance && rDistance > distance) {
+      backward("");
+      //log("Obstacle detected from front sensor. Moving backwards.");
+    } else if (fDistance > distance && bDistance <= distance && lDistance > distance && rDistance > distance) {
+      forward("");
+      //log("Obstacle detected from back sensor. Moving forward.");
+    } else if (fDistance > distance && bDistance > distance && lDistance <= distance && rDistance > distance) {
+      turnRight("");
+      //log("Obstacle detected from left sensor. Turning right.");
+    } else if (fDistance > distance && bDistance > distance && lDistance > distance && rDistance <= distance) {
+      turnLeft("");
+      //log("Obstacle detected from right sensor. Turning left.");
+      /* 2 tripped */
+    } else if (fDistance <= distance && bDistance > distance && lDistance <= distance && rDistance > distance) {
+      turnRight("");
+      //log("Obstacle detected from front and left sensors. Turning right.");
+    } else if (fDistance <= distance && bDistance > distance && lDistance > distance && rDistance <= distance) {
+      turnLeft("");
+      //log("Obstacle detected from front and right sensors. Turning left.");
+      /* 3 tripped */
+    } else if (fDistance <= distance && bDistance > distance && lDistance <= distance && rDistance <= distance) {
+      backward("");
+      //log("Obstacle detected from left, front and right sensors. Moving backwards.");
+    }
+  } else {
+    //forward();
+  }
 }
 
 /**
@@ -234,12 +277,20 @@ int getDistanceCM(struct HCSR04 sensor) {
   return (duration / 2) / TO_CM;
 }
 
-bool checkSensorsForObstacle() {
-  if (getDistanceCM(front_sensor) < 20) {
+bool checkSensorsForObstacle(int distance) {
+  if (getDistanceCM(front_sensor) < distance) {
     return true;
   }
 
-  if (getDistanceCM(back_sensor) < 20) {
+  if (getDistanceCM(back_sensor) < distance) {
+    return true;
+  }
+
+  if (getDistanceCM(left_sensor) < distance) {
+    return true;
+  }
+
+  if (getDistanceCM(right_sensor) < distance) {
     return true;
   }
 
@@ -249,39 +300,47 @@ bool checkSensorsForObstacle() {
 /**
 ***   REST calls to the other board
 **/
-void backward() {
+void backward(String wait) {
   Process p;
-  p.runShellCommandAsynchronously("wget http://192.168.0.16/arduino/moveBackward");
+  String command = String("wget http://192.168.0.16/arduino/moveBackward/");
+  command.concat(wait);
+  p.runShellCommand(command);
   lastCommand = BACKWARD;
 }
 
-void forward() {
+void forward(String wait) {
   Process p;
-  p.runShellCommandAsynchronously("wget http://192.168.0.16/arduino/moveForward");
+  String command = String("wget http://192.168.0.16/arduino/moveForward/");
+  command.concat(wait);
+  p.runShellCommand(command);
   lastCommand = FORWARD;
 }
 
 void allStop() {
   Process p;
-  p.runShellCommandAsynchronously("wget http://192.168.0.16/arduino/stop");
+  p.runShellCommand("wget http://192.168.0.16/arduino/stop");
   lastCommand = STOP;
 }
 
-void turnRight() {
+void turnRight(String wait) {
   Process p;
-  p.runShellCommandAsynchronously("wget http://192.168.0.16/arduino/rightTurn");
+  String command = String("wget http://192.168.0.16/arduino/rightTurn/");
+  command.concat(wait);
+  p.runShellCommand(command);
   lastCommand = RIGHT;
 }
 
-void turnLeft() {
+void turnLeft(String wait) {
   Process p;
-  p.runShellCommandAsynchronously("wget http://192.168.0.16/arduino/leftTurn");
+  String command = String("wget http://192.168.0.16/arduino/leftTurn/");
+  command.concat(wait);
+  p.runShellCommand(command);
   lastCommand = LEFT;
 }
 
 void setFastSpeed() {
   Process p;
-  p.runShellCommandAsynchronously("wget http://192.168.0.16/arduino/setFastSpeed");
+  p.runShellCommand("wget http://192.168.0.16/arduino/setFastSpeed");
 }
 
 
