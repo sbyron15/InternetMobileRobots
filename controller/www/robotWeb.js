@@ -166,7 +166,10 @@ $(document).ready(function() {
             debugMsg = 'Stopping';
         }
 
-        sendCommand('direction', path, true);
+        sendCommand('direction', path, function(){
+            sending = false;
+            setDirection(translateDirection($('#direction').text()));
+        });
 
         $('#msg').text(debugMsg);
     }
@@ -220,13 +223,13 @@ $(document).ready(function() {
 
     // handles sending commands, including the session id
     function sendCommand(htmlId, commandPath){
-        sendCommand(htmlId, commandPath, false);
+        sendCommand(htmlId, commandPath, function(){}, function(){});
     }
 
-    function sendCommand(htmlId, commandPath, updateDirection){
+    function sendCommand(htmlId, commandPath, onSuccess, onFailure){
         if (sid == null){
             getSID(function(){
-                sendCommand(htmlId, commandPath, updateDirection);
+                sendCommand(htmlId, commandPath, onSuccess, onFailure);
             });
         }
         else { 
@@ -237,22 +240,17 @@ $(document).ready(function() {
                     if (errorCode == ERR_SID_EXP){ // session id expired
                         sid = null;
                         getSID(function(){
-                            sendCommand(htmlId, commandPath, updateDirection);
+                            sendCommand(htmlId, commandPath, onSuccess, onFailure);
                         });
                     }
-                    else if (errorCode == ERR_BAD_SID){
+                    else {
                         $('#error').show();
+                        onFailure();
                     }
                 }
                 else { //successful command
                     $('#error').hide();
-                    if (updateDirection){
-                        setDirection(translateDirection($('#direction').text()));
-                    }
-                }
-
-                if (updateDirection){
-                    sending = false;
+                    onSuccess();
                 }
             });
         }
