@@ -232,7 +232,7 @@ $(document).ready(function() {
         else { 
             // we have a session id, execute command
             $('#' + htmlId).load(commandPath + '/' + sid, function(){
-                if ($('#' + htmlId).text().slice(3) == 'err'){
+                if ($('#' + htmlId).text().substr(0, 3) == 'err'){
                     var errorCode = $('#' + htmlId).text()[5];
                     if (errorCode == ERR_SID_EXP){ // session id expired
                         sid = null;
@@ -266,7 +266,7 @@ $(document).ready(function() {
     function getSID(onSuccess, onFailure){
         // attempt to get SID
         $('#sid').load('/arduino/getSID', function(){
-            if ($('#sid').text().slice(5) == 'err=5'){ // another session is in progress
+            if ($('#sid').text().substr(0, 3) == 'err'){ // another session is in progress
                 sid = null;
                 onFailure();
             }
