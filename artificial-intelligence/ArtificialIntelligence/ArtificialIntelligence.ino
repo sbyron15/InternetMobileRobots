@@ -41,8 +41,11 @@ const String BACKWARD = "moveBackward";
 const String LEFT = "leftTurn";
 const String RIGHT = "rightTurn";
 const String STOP = "stop";
+const String SET_IP = "setIp";
 
 const String CONST_SID = "816845";
+
+String arduino1Address = "http://192.168.0.16/arduino";
 
 // Start off in remote control mode
 int mode = REMOTE_CONTROL;
@@ -109,6 +112,8 @@ void loop() {
 
     if (command == START_WEBCAM) {
       startWebcam();
+    } else if (command.startsWith(SET_IP)) {
+      setIpAddress(command);
     }
 
   }
@@ -236,7 +241,7 @@ void aiMode1() {
   if (fDistance < distance || bDistance < distance || lDistance < distance || rDistance < distance) {
     allStop();
   }
-  
+
   /*Checking for only 1 tripped */
   if (fDistance <= distance && bDistance > distance && lDistance > distance && rDistance > distance) {
     backward("");
@@ -273,6 +278,17 @@ void aiMode1() {
 void startWebcam() {
   Process p;
   p.runShellCommandAsynchronously("mjpg_streamer -i \"input_uvc.so -d /dev/video0 -r 160x120 -f 8 -q 75\" -o \"output_http.so -p 8080 -w /root\"");
+}
+
+void setIpAddress(String command) {
+  int slashIndex = command.lastIndexOf('/');
+  if (slashIndex != -1) {
+    String ip = command.substring(slashIndex + 1);
+    String newAddress = "http://";
+    newAddress.concat(ip);
+    newAddress.concat("/arduino");
+    arduino1Address = newAddress;
+  }
 }
 
 /**
@@ -314,7 +330,9 @@ bool checkSensorsForObstacle(int distance) {
 **/
 void backward(String wait) {
   Process p;
-  String command = "curl http://192.168.0.16/arduino/moveBackward/";
+  String command = String("curl ");
+  command.concat(arduino1Address);
+  command.concat("/moveBackward/");
   command.concat(wait);
   command.concat("/");
   command.concat(CONST_SID);
@@ -324,7 +342,9 @@ void backward(String wait) {
 
 void forward(String wait) {
   Process p;
-  String command = String("curl http://192.168.0.16/arduino/moveForward/");
+  String command = String("curl ");
+  command.concat(arduino1Address);
+  command.concat("/moveForward/");
   command.concat(wait);
   command.concat("/");
   command.concat(CONST_SID);
@@ -334,7 +354,9 @@ void forward(String wait) {
 
 void allStop() {
   Process p;
-  String command = String("curl http://192.168.0.16/arduino/stop/");
+  String command = String("curl ");
+  command.concat(arduino1Address);
+  command.concat("/stop/");
   command.concat(CONST_SID);
   p.runShellCommand(command);
   lastCommand = STOP;
@@ -342,7 +364,9 @@ void allStop() {
 
 void turnRight(String wait) {
   Process p;
-  String command = String("curl http://192.168.0.16/arduino/rightTurn/");
+  String command = String("curl ");
+  command.concat(arduino1Address);
+  command.concat("/rightTurn/");
   command.concat(wait);
   command.concat("/");
   command.concat(CONST_SID);
@@ -352,7 +376,9 @@ void turnRight(String wait) {
 
 void turnLeft(String wait) {
   Process p;
-  String command = String("curl http://192.168.0.16/arduino/leftTurn/");
+  String command = String("curl ");
+  command.concat(arduino1Address);
+  command.concat("/leftTurn/");
   command.concat(wait);
   command.concat("/");
   command.concat(CONST_SID);
@@ -362,7 +388,9 @@ void turnLeft(String wait) {
 
 void setFastSpeed() {
   Process p;
-  String command = String("curl http://192.168.0.16/arduino/setFastSpeed/");
+  String command = String("curl ");
+  command.concat(arduino1Address);
+  command.concat("/setFastSpeed/");
   command.concat(CONST_SID);
   p.runShellCommand(command);
 }
