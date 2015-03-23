@@ -79,6 +79,7 @@ void setup()
 
   // Start log
   FileSystem.begin();
+  clearLog();
   log("System started");
 
   randomSeed(analogRead(0)); // reading unused pin is fairly random
@@ -102,7 +103,10 @@ void loop()
       sid = -1;
     }
 
-    if (command == STATUS) { // always allow status commands
+    if (command.length() == 0) { // occasionally receiving blank requests
+      error = ERR_BAD_CMD;
+    }
+    else if (command == STATUS) { // always allow status commands
       log("Received command: " + command);
       client.print(lastCommand + ":" + String(speed));
     } 
@@ -132,7 +136,12 @@ void loop()
       }
 
       if (error == ERR_NONE) {
-        log("Received command: " + command);
+        if (receivedSID == ADMIN_SID){
+          log("Received admin command: " + command);
+        }
+        else {
+          log("Received command: " + command);
+        }
         session_set_time = millis(); // refresh session
          
         if (command.startsWith(SET_TIME)) {
@@ -145,9 +154,13 @@ void loop()
           client.print("Log cleared");
         } else {
           // process any speed commands
-          processSpeedCommand(command, client);
+          bool isSpeed = processSpeedCommand(command, client);
           // process any direction commands
-          processDirectionCommand(command, client);
+          bool isDirection = processDirectionCommand(command, client);
+          
+          if (!(isSpeed || isDirection)){
+            error = ERR_BAD_CMD;
+          }
         }
       }
     }
@@ -161,7 +174,7 @@ void loop()
   client.stop();
 }
 
-void processDirectionCommand(String command, YunClient client) {
+bool processDirectionCommand(String command, YunClient client) {
   if (command.startsWith(FORWARD)) {
     forward();
     int slashIndex = command.lastIndexOf('/');
@@ -171,7 +184,8 @@ void processDirectionCommand(String command, YunClient client) {
       allStop();
     }
     client.print(command);
-
+    return true;
+    
   } else if (command.startsWith(BACKWARD)) {
     backward();
     int slashIndex = command.lastIndexOf('/');
@@ -181,6 +195,7 @@ void processDirectionCommand(String command, YunClient client) {
       allStop();
     }
     client.print(command);
+    return true;
 
   } else if (command.startsWith(LEFT)) {
     turnLeft(255);
@@ -191,6 +206,7 @@ void processDirectionCommand(String command, YunClient client) {
       allStop();
     }
     client.print(command);
+    return true;
 
   } else if (command.startsWith(RIGHT)) {
     turnRight(255);
@@ -201,10 +217,13 @@ void processDirectionCommand(String command, YunClient client) {
       allStop();
     }
     client.print(command);
+    return true;
   }
+  
+  return false;
 }
 
-void processSpeedCommand(String command, YunClient client) {
+bool processSpeedCommand(String command, YunClient client) {
   bool printSpeed = false;
 
   if (command == SPEED_UP) {
@@ -240,13 +259,17 @@ void processSpeedCommand(String command, YunClient client) {
 
   } else if (command == STOP) {
     allStop();
+    return true;
   }
 
   if (printSpeed) {
     client.print("SPEED = ");
     client.print(speed);
     client.print("\n");
+    return true;
   }
+  
+  return false;
 }
 
 
@@ -378,10 +401,12 @@ void replayLastDirection() {
 **/
 void log(String msg) {
   File msgLog = FileSystem.open(LOG_PATH, FILE_APPEND);
+  
   if (unix_time == -1)
-    msgLog.println(msg);
+    msgLog.println(String(millis()) + ": " + msg);
   else
     msgLog.println(String(unix_time + (millis() - millis_time_set) / 1000) + ": " + msg);
+    
   msgLog.close();
 }
 

@@ -2,35 +2,52 @@ $(document).ready(function() {
 
     var REQUEST_PATH = '/arduino/status';
 
-    /*$('#latency-test').on('click', function(){
-        $.get('/arduino/status', function( data ) {
-            $( "#latency-result" ).text( data );
-            alert( "Get finished" );
-        });
-    });*/
+    function processResults(results){
+        var allResults = '';
+        var sum = 0;
 
-    $('#latency-test').on('click', function(){
-        var numRequests = parseInt($('#latency-number').val());
-        results = new Array(numRequests);
-        sendSequentialRequests(numRequests, results);
-    });
+        for (var i = 0; i < results.length; i++){
+            allResults += results[i] + ', ';
+            sum += results[i];           
+        }
+        $('#latency-mean').text(sum * 1.0 / results.length);
+        $('#latency-median').text(results[results.length / 2]);
+        $('#latency-raw').text(allResults);
+
+        enableInputs();
+        $('#latency-run').text('Run latency test');
+    }
 
     function sendSequentialRequests(numRequests, results){
         var start = Date.now();
         $.get(REQUEST_PATH, function(data){
-            numRequests = numRequests - 1;
-            results[numRequests] = Date.now() - start;
+            results[numRequests - 1] = Date.now() - start;
             
-            if (numRequests == 0) processResults(results);
-            else sendSequentialRequests(numRequests - 1, results);
+            if (numRequests == 1) {
+                processResults(results);
+            }
+            else {
+                sendSequentialRequests(numRequests - 1, results);
+            }
         });
     }
 
-    function processResults(results){
-        var text = '';
-        for (int i = 0; i < results.length; i++){
-            text += results[i] + ', ';           
-        }
-        $('#latency-result').text(text);
+    function enableInputs(){
+        $('input').removeAttr('disabled');
+        $('button').removeAttr('disabled');
     }
+
+    function disableInputs(){
+        $('input').attr('disabled', 'disabled');
+        $('button').attr('disabled', 'disabled');
+    }
+
+    $('#latency-run').on('click', function(){
+        disableInputs();
+        $('#latency-run').text('Running latency test...');
+
+        var numRequests = parseInt($('#latency-number').val(), 10);
+        var results = new Array(numRequests);
+        sendSequentialRequests(numRequests, results);
+    });
 });
