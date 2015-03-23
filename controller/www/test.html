@@ -15,9 +15,21 @@
             <input id='latency-number' type='number' min='1' max='1000'/>
 
             <br />
-            <button id='latency-test'>Run latency test</button>
+            <button id='latency-run'>Run latency test</button>
 
-            <p id='latency-result'></p>
+            <div id='latency-results'>
+                <h3>Results (in ms)</h3>
+                <label for='latency-mean'>Mean: </label>
+                <span id='latency-mean'></span>
+                <br />
+
+                <label for='latency-median'>Median: </label>
+                <span id='latency-median'></span>
+                <br />
+
+                <label for='latency-raw'>Latency of each call (most recent first): </label>
+                <span id='latency-raw'></span>
+            </div>
         </div>
 
     </body>   

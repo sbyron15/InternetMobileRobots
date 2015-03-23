@@ -1,7 +1,9 @@
 $(document).ready(function() {
     // Debug
     var DEBUG = true;
-    if (!DEBUG) $('#debug').hide();
+    if (!DEBUG) {
+        $('#debug').hide();
+    }
 
     // Constants
     var UP = 'up';
@@ -43,11 +45,11 @@ $(document).ready(function() {
         $('#msg').text(e.keyCode + ' key pressed'); 
         
         var sc = $('#speedControl');
-        if (isSpeedUp(e.keyCode) && parseInt(sc.val()) < MAX_SPEED){
-            sc.val(parseInt(sc.val()) + 1);
+        if (isSpeedUp(e.keyCode) && parseInt(sc.val(), 10) < MAX_SPEED){
+            sc.val(parseInt(sc.val(), 10) + 1);
         }
         else if (isSlowDown(e.keyCode) && parseInt(sc.val()) > MIN_SPEED){
-            sc.val(parseInt(sc.val()) - 1);
+            sc.val(parseInt(sc.val(), 10) - 1);
         }
         else if (isLeft(e.keyCode)) sendDirection(LEFT);
         else if (isUp(e.keyCode)) sendDirection(UP);
@@ -115,7 +117,7 @@ $(document).ready(function() {
     // Speed change event
     $('#speedControl').on('change', function(){
         $('#msg').text('Setting speed to level ' + $(this).val()); 
-        switch (parseInt($(this).val())){
+        switch (parseInt($(this).val(), 10)){
             case 0: 
                 sendCommand('speed', '/arduino/stop');
                 break;
