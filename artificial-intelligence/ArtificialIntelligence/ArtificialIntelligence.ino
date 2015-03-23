@@ -26,6 +26,8 @@ struct HCSR04 right_sensor;
 const int leftSensorPower = 5;
 const int rightSensorPower = 2;
 
+const int stopPin = 7;
+
 // Global server object
 YunServer server;
 
@@ -59,12 +61,12 @@ void setup() {
 
   server.begin();
 
-  front_sensor.trigPin = 9;
+  front_sensor.trigPin = 12;
   front_sensor.echoPin = 8;
   back_sensor.trigPin = 10;
   back_sensor.echoPin = 11;
-  left_sensor.trigPin = 6;
-  left_sensor.echoPin = 7;
+  left_sensor.trigPin = 13;
+  left_sensor.echoPin = 6;
   right_sensor.trigPin = 4;
   right_sensor.echoPin = 3;
 
@@ -83,9 +85,12 @@ void setup() {
 
   digitalWrite(rightSensorPower, HIGH);
   digitalWrite(leftSensorPower, HIGH);
+  
+  pinMode(stopPin, OUTPUT);
+  digitalWrite(stopPin, LOW);
 
+  clearLog();
   log("System started");
-
 }
 
 void loop() {
@@ -114,11 +119,15 @@ void loop() {
       startWebcam();
     } else if (command.startsWith(SET_IP)) {
       setIpAddress(command);
+      client.print(arduino1Address);
     }
 
   }
 
   client.stop();
+  
+  // Default to remote control mode
+  remoteControlMode():
 }
 
 /**
@@ -133,8 +142,7 @@ void switchMode(String command, YunClient client) {
   } else if (command == AI1) {
     mode = AIMODE1;
     client.print("AI Mode");
-    forward("");
-    setFastSpeed();
+    setMediumSpeed();
 
   } else if (command == FOLLOW_LINE) {
     allStop();
@@ -153,6 +161,13 @@ void switchMode(String command, YunClient client) {
 /**
 ***   Modes
 **/
+void remoteControlMode() {
+  if (checkSensorsForObstacle(10)) {
+    allStop();
+  }
+  delay(200);
+}
+
 void lineFollowingMode() {
   Process p;
   p.runShellCommand("nice -n -19 python /root/image-processing/follow-line.pyo");
@@ -197,13 +212,13 @@ void followGreenMode() {
   p.close();
 
   if (result[0] == 'F') {
-    forward("800");
+    forward("");
     log("FG: F");
   } else if (result[0] == 'R') {
-    turnRight("800");
+    turnRight("");
     log("FG: R");
   } else if (result[0] == 'L') {
-    turnLeft("800");
+    turnLeft("");
     log("FG: L");
   } else if (result[0] == 'S') {
     allStop();
@@ -212,58 +227,60 @@ void followGreenMode() {
 }
 
 void aiMode1() {
-  int distance = 10;
-  delay(2500);
-
+  int frontDistance = 30;
+  int backDistance = 20;
+  int leftDistance = 10;
+  int rightDistance = 10;
+  
+  delay(5);
   long fDistance = getDistanceCM(front_sensor);
-  delay(100);
+  delay(5);
   long bDistance = getDistanceCM(back_sensor);
-  delay(100);
+  delay(5);
   long lDistance = getDistanceCM(left_sensor);
-  delay(100);
+  delay(5);
   long rDistance = getDistanceCM(right_sensor);
 
   log(String(fDistance) + " " + String(bDistance) + " " + String(lDistance) + " " + String(rDistance));
 
   if (fDistance == 0) {
-    fDistance = distance + 1;
+    fDistance = frontDistance + 1;
   }
   if (bDistance == 0) {
-    bDistance = distance + 1;
+    bDistance = backDistance + 1;
   }
   if (lDistance == 0) {
-    lDistance = distance + 1;
+    lDistance = leftDistance + 1;
   }
   if (rDistance == 0) {
-    rDistance = distance + 1;
+    rDistance = rightDistance + 1;
   }
 
-  if (fDistance < distance || bDistance < distance || lDistance < distance || rDistance < distance) {
+  if (fDistance < frontDistance && bDistance < backDistance) {
     allStop();
   }
-
   /*Checking for only 1 tripped */
-  if (fDistance <= distance && bDistance > distance && lDistance > distance && rDistance > distance) {
+  else if (fDistance <= frontDistance && bDistance > backDistance && lDistance > leftDistance && rDistance > rightDistance) {
     backward("");
     log("FS Trig. B");
-  } else if (fDistance > distance && bDistance <= distance && lDistance > distance && rDistance > distance) {
+  } else if (fDistance > frontDistance && bDistance <= backDistance && lDistance > leftDistance && rDistance > rightDistance) {
     forward("");
     log("BS Trig. F");
-  } else if (fDistance > distance && bDistance > distance && lDistance <= distance && rDistance > distance) {
+  } else if (fDistance > frontDistance && bDistance > backDistance && lDistance <= leftDistance && rDistance > rightDistance) {
     turnRight("");
     log("LS Trig. R");
-  } else if (fDistance > distance && bDistance > distance && lDistance > distance && rDistance <= distance) {
+  } else if (fDistance > frontDistance && bDistance > backDistance && lDistance > leftDistance && rDistance <= rightDistance) {
     turnLeft("");
     log("RS Trig. L");
     /* 2 tripped */
-  } else if (fDistance <= distance && bDistance > distance && lDistance <= distance && rDistance > distance) {
+  } else if (fDistance <= frontDistance && bDistance > backDistance && lDistance <= leftDistance && rDistance > rightDistance) {
     turnRight("");
     log("FS & LS. R");
-  } else if (fDistance <= distance && bDistance > distance && lDistance > distance && rDistance <= distance) {
+  } else if (fDistance <= frontDistance && bDistance > backDistance && lDistance > leftDistance && rDistance <= rightDistance) {
     turnLeft("");
     log("FS & RS. L");
     /* 3 tripped */
-  } else if (fDistance <= distance && bDistance > distance && lDistance <= distance && rDistance <= distance) {
+  } else if (fDistance <= frontDistance && bDistance > backDistance && lDistance <= leftDistance && rDistance <= rightDistance) {
     backward("");
     log("LS, FS, RS. B");
   } else {
@@ -395,6 +412,15 @@ void setFastSpeed() {
   p.runShellCommand(command);
 }
 
+void setMediumSpeed() {
+  Process p;
+  String command = String("curl ");
+  command.concat(arduino1Address);
+  command.concat("/setMediumSpeed/");
+  command.concat(CONST_SID);
+  p.runShellCommand(command);
+}
+
 
 /**
 ***   Logging
@@ -402,5 +428,10 @@ void setFastSpeed() {
 void log(String msg) {
   File msgLog = FileSystem.open(LOG_PATH, FILE_APPEND);
   msgLog.println(msg);
+  msgLog.close();
+}
+
+void clearLog() {
+  File msgLog = FileSystem.open(LOG_PATH, FILE_WRITE); // write clears file
   msgLog.close();
 }
