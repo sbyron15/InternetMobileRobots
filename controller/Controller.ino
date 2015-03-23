@@ -46,6 +46,7 @@ const int ERR_SID_EXP = 4;  // sid expired, no session is in progress
 const int ERR_BAD_SID_REQ = 5; // getSID called, but unexpired sid alremilady exists
 
 const unsigned long SESSION_TIMEOUT = 60000; // session times out in one minute
+const long ADMIN_SID = 816845;
 
 long sid = -1;
 unsigned long session_set_time = 0; // indicates time from millis() that session was last refreshed
@@ -96,7 +97,7 @@ void loop()
     command.trim(); //kill whitespace
     
     // expire session on timeout
-    if (millis() - session_set_time > SESSION_TIMEOUT) {
+    if (sid != -1 && (millis() - session_set_time > SESSION_TIMEOUT)) {
       log("Session expired");
       sid = -1;
     }
@@ -105,7 +106,7 @@ void loop()
       log("Received command: " + command);
       client.print(lastCommand + ":" + String(speed));
     } 
-    /*else if (command == GET_SID) { // always allow attempts to get sid
+    else if (command == GET_SID) { // always allow attempts to get sid
       log("Received command: " + command);
       if (sid == -1) {
         sid = random(0x7FFFFFFFL);
@@ -114,21 +115,23 @@ void loop()
       else {
         error = ERR_BAD_SID_REQ;
       }
-    } */
+    }
     else {
-      /*long receivedSID;
+      long receivedSID;
 
       int sidSlashIndex = command.lastIndexOf('/');
       if (sidSlashIndex == -1 || sidSlashIndex == command.length() - 1) error = ERR_NO_SID;
-      else if (sid == -1) error = ERR_SID_EXP;
-      else {
-        // extract sid from rest of command
-        receivedSID = command.substring(sidSlashIndex + 1).toInt();
-        command = command.substring(0, sidSlashIndex);
-        if (receivedSID != sid) error = ERR_BAD_SID;
+      
+      // extract SID and command
+      receivedSID = command.substring(sidSlashIndex + 1).toInt();
+      command = command.substring(0, sidSlashIndex);
+      
+      if (receivedSID != ADMIN_SID){
+        if (sid == -1) error = ERR_SID_EXP;
+        else if (receivedSID != sid) error = ERR_BAD_SID;
       }
 
-      if (error == ERR_NONE) {*/
+      if (error == ERR_NONE) {
         log("Received command: " + command);
         session_set_time = millis(); // refresh session
          
@@ -146,13 +149,13 @@ void loop()
           // process any direction commands
           processDirectionCommand(command, client);
         }
-      //}
+      }
     }
     
-    /*if (error != ERR_NONE) {
+    if (error != ERR_NONE) {
       client.print(getErrorString(error));
       log("Error id=" + String(error) + " on received command \"" + command + "\"");
-    }*/
+    }
   }
 
   client.stop();
