@@ -58,6 +58,9 @@ unsigned long millis_time_set = 0; // indicates how long (in ms) the system was 
 // Log file location
 const char* LOG_PATH = "/mnt/sd/arduino/www/controller/log.txt";
 
+const int forwardStopPin = 2;
+const int backwardStopPin = 3;
+
 void setup()
 {
   Bridge.begin();
@@ -83,10 +86,19 @@ void setup()
   log("System started");
 
   randomSeed(analogRead(0)); // reading unused pin is fairly random
+
+  pinMode(forwardStopPin, INPUT);
+  pinMode(backwardStopPin, INPUT);
 }
 
 void loop()
-{ 
+{
+  if (lastCommand == FORWARD && checkForwardSensor()) {
+      allStop();
+  } else if (lastCommand == BACKWARD && checkBackSensor()) {
+      allStop();
+  }
+
   // There is a new client?
   YunClient client = server.accept();
   if (client) {
@@ -96,7 +108,7 @@ void loop()
     // read the command from the client
     String command = client.readString();
     command.trim(); //kill whitespace
-    
+
     // expire session on timeout
     if (sid != -1 && (millis() - session_set_time > SESSION_TIMEOUT)) {
       log("Session expired");
@@ -109,13 +121,13 @@ void loop()
     else if (command == STATUS) { // always allow status commands
       log("Received command: " + command);
       client.print(lastCommand + ":" + String(speed));
-    } 
+    }
     else if (command == GET_SID) { // always allow attempts to get sid
       log("Received command: " + command);
       if (sid == -1) {
         sid = random(0x7FFFFFFFL);
         client.print(String(sid));
-      } 
+      }
       else {
         error = ERR_BAD_SID_REQ;
       }
@@ -125,30 +137,30 @@ void loop()
 
       int sidSlashIndex = command.lastIndexOf('/');
       if (sidSlashIndex == -1 || sidSlashIndex == command.length() - 1) error = ERR_NO_SID;
-      
+
       // extract SID and command
       receivedSID = command.substring(sidSlashIndex + 1).toInt();
       command = command.substring(0, sidSlashIndex);
-      
-      if (receivedSID != ADMIN_SID){
+
+      if (receivedSID != ADMIN_SID) {
         if (sid == -1) error = ERR_SID_EXP;
         else if (receivedSID != sid) error = ERR_BAD_SID;
       }
 
       if (error == ERR_NONE) {
-        if (receivedSID == ADMIN_SID){
+        if (receivedSID == ADMIN_SID) {
           log("Received admin command: " + command);
         }
         else {
           log("Received command: " + command);
         }
         session_set_time = millis(); // refresh session
-         
+
         if (command.startsWith(SET_TIME)) {
           unix_time = command.substring(command.indexOf('/') + 1).toInt();
           millis_time_set = millis();
           client.print("time=" + String(unix_time));
-        } 
+        }
         else if (command == CLEAR_LOG) {
           clearLog();
           client.print("Log cleared");
@@ -157,14 +169,14 @@ void loop()
           bool isSpeed = processSpeedCommand(command, client);
           // process any direction commands
           bool isDirection = processDirectionCommand(command, client);
-          
-          if (!(isSpeed || isDirection)){
+
+          if (!(isSpeed || isDirection)) {
             error = ERR_BAD_CMD;
           }
         }
       }
     }
-    
+
     if (error != ERR_NONE) {
       client.print(getErrorString(error));
       log("Error id=" + String(error) + " on received command \"" + command + "\"");
@@ -185,7 +197,7 @@ bool processDirectionCommand(String command, YunClient client) {
     }
     client.print(command);
     return true;
-    
+
   } else if (command.startsWith(BACKWARD)) {
     backward();
     int slashIndex = command.lastIndexOf('/');
@@ -219,7 +231,7 @@ bool processDirectionCommand(String command, YunClient client) {
     client.print(command);
     return true;
   }
-  
+
   return false;
 }
 
@@ -268,7 +280,7 @@ bool processSpeedCommand(String command, YunClient client) {
     client.print("\n");
     return true;
   }
-  
+
   return false;
 }
 
@@ -396,17 +408,31 @@ void replayLastDirection() {
   }
 }
 
+boolean checkForwardSensor() {
+  if (digitalRead(forwardStopPin) == HIGH) {
+    return true;
+  }
+  return false;
+}
+
+boolean checkBackSensor() {
+  if (digitalRead(backwardStopPin) == HIGH) {
+    return true;
+  }
+  return false;
+}
+
 /**
 ***   Misc Methods
 **/
 void log(String msg) {
   File msgLog = FileSystem.open(LOG_PATH, FILE_APPEND);
-  
+
   if (unix_time == -1)
     msgLog.println(String(millis()) + ": " + msg);
   else
     msgLog.println(String(unix_time + (millis() - millis_time_set) / 1000) + ": " + msg);
-    
+
   msgLog.close();
 }
 

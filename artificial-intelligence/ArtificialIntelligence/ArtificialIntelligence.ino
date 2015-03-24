@@ -26,7 +26,8 @@ struct HCSR04 right_sensor;
 const int leftSensorPower = 5;
 const int rightSensorPower = 2;
 
-const int stopPin = 7;
+const int forwardStopPin = 7;
+const int backwardStopPin = 9;
 
 // Global server object
 YunServer server;
@@ -47,7 +48,12 @@ const String SET_IP = "setIp";
 
 const String CONST_SID = "816845";
 
-String arduino1Address = "http://192.168.0.16/arduino";
+const int frontDistance = 30;
+const int backDistance = 20;
+const int leftDistance = 10;
+const int rightDistance = 10;
+
+String arduino1Address = "http://192.168.0.15/arduino";
 
 // Start off in remote control mode
 int mode = REMOTE_CONTROL;
@@ -85,9 +91,11 @@ void setup() {
 
   digitalWrite(rightSensorPower, HIGH);
   digitalWrite(leftSensorPower, HIGH);
-  
-  pinMode(stopPin, OUTPUT);
-  digitalWrite(stopPin, LOW);
+
+  pinMode(forwardStopPin, OUTPUT);
+  pinMode(backwardStopPin, OUTPUT);
+  digitalWrite(forwardStopPin, LOW);
+  digitalWrite(backwardStopPin, LOW);
 
   clearLog();
   log("System started");
@@ -100,6 +108,9 @@ void loop() {
     lineFollowingMode();
   } else if (mode == FOLLOW_GREEN_MODE) {
     followGreenMode();
+  } else {
+    // Default to remote control mode
+    remoteControlMode();
   }
 
   // There is a new client?
@@ -125,9 +136,6 @@ void loop() {
   }
 
   client.stop();
-  
-  // Default to remote control mode
-  remoteControlMode():
 }
 
 /**
@@ -162,10 +170,18 @@ void switchMode(String command, YunClient client) {
 ***   Modes
 **/
 void remoteControlMode() {
-  if (checkSensorsForObstacle(10)) {
-    allStop();
+  int sensor = checkSensorsForObstacle();
+  if (sensor == 1) {
+    forwardStop();
+    log("RC: F Stop");
+  } else if (sensor == 2)  {
+    backwardStop();
+    log("RC: B Stop");
+  } else {
+    unStop();
+    log("RC: Go");
   }
-  delay(200);
+  delay(400);
 }
 
 void lineFollowingMode() {
@@ -227,18 +243,17 @@ void followGreenMode() {
 }
 
 void aiMode1() {
-  int frontDistance = 30;
-  int backDistance = 20;
-  int leftDistance = 10;
-  int rightDistance = 10;
-  
-  delay(5);
+  if (lastCommand == STOP) {
+    unStop();
+  }
+
+  delay(10);
   long fDistance = getDistanceCM(front_sensor);
-  delay(5);
+  delay(10);
   long bDistance = getDistanceCM(back_sensor);
-  delay(5);
+  delay(10);
   long lDistance = getDistanceCM(left_sensor);
-  delay(5);
+  delay(10);
   long rDistance = getDistanceCM(right_sensor);
 
   log(String(fDistance) + " " + String(bDistance) + " " + String(lDistance) + " " + String(rDistance));
@@ -322,24 +337,18 @@ int getDistanceCM(struct HCSR04 sensor) {
   return (duration / 60);
 }
 
-bool checkSensorsForObstacle(int distance) {
-  if (getDistanceCM(front_sensor) < distance) {
-    return true;
+int checkSensorsForObstacle() {
+  int fDistance = getDistanceCM(front_sensor);
+  if (fDistance != 0 && fDistance < frontDistance) {
+    return 1;
   }
-
-  if (getDistanceCM(back_sensor) < distance) {
-    return true;
+ 
+  int bDistance = getDistanceCM(back_sensor);
+  if (bDistance != 0 && bDistance < backDistance) {
+    return 2;
   }
-
-  if (getDistanceCM(left_sensor) < distance) {
-    return true;
-  }
-
-  if (getDistanceCM(right_sensor) < distance) {
-    return true;
-  }
-
-  return false;
+  
+  return 0;
 }
 
 /**
@@ -370,13 +379,31 @@ void forward(String wait) {
 }
 
 void allStop() {
-  Process p;
+  /*Process p;
   String command = String("curl ");
   command.concat(arduino1Address);
   command.concat("/stop/");
   command.concat(CONST_SID);
-  p.runShellCommand(command);
+  p.runShellCommand(command);*/
+  forwardStop();
+  backwardStop();
+}
+
+void forwardStop() {
   lastCommand = STOP;
+  digitalWrite(forwardStopPin, HIGH);
+  digitalWrite(backwardStopPin, LOW);
+}
+
+void backwardStop() {
+  lastCommand = STOP;
+  digitalWrite(forwardStopPin, HIGH);
+  digitalWrite(backwardStopPin, LOW);
+}
+
+void unStop() {
+  digitalWrite(forwardStopPin, LOW);
+  digitalWrite(backwardStopPin, LOW);
 }
 
 void turnRight(String wait) {
@@ -427,7 +454,7 @@ void setMediumSpeed() {
 **/
 void log(String msg) {
   File msgLog = FileSystem.open(LOG_PATH, FILE_APPEND);
-  msgLog.println(msg);
+  msgLog.println(String(millis()) + ": " + msg);
   msgLog.close();
 }
 
