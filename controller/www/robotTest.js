@@ -98,6 +98,6 @@ $(document).ready(function() {
         disableInputs();
         $('#tp-run').text('Running throughput test...');
 
-        sendAsynchronousRequests($('#tp-number').val(), $('#tp-timeout').val());
+        sendAsynchronousRequests($('#tp-number').val(), $('#tp-timeout').val() * 6000);
     });
 });

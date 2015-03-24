@@ -36,6 +36,7 @@ const String STATUS = "status";
 const String CLEAR_LOG = "clearLog";
 const String GET_SID = "getSID";
 const String SET_TIME = "setTime";
+const String LOGOUT = "logout";
 
 // Error constants
 const int ERR_NONE = 0;    // indicates no error for internal use
@@ -166,7 +167,12 @@ void loop()
         else if (command == CLEAR_LOG) {
           clearLog();
           client.print("Log cleared");
-        } else {
+        }
+        else if (command == LOGOUT){
+          sid = -1;
+          session_set_time = 0;
+        } 
+        else {
           // process any speed commands
           bool isSpeed = processSpeedCommand(command, client);
           // process any direction commands
