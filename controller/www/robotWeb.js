@@ -14,6 +14,9 @@ $(document).ready(function() {
     var MIN_SPEED = 0;
     var MAX_SPEED = 3;
     var UPDATE_DELAY = 5000;
+
+    var ERR_BAD_CMD = '1'; // Is returned when the request fails to send properly
+    var ERR_NO_SID = '2';  // theoretically shouldn't need this one in the web app
     var ERR_BAD_SID = '3';
     var ERR_SID_EXP = '4';
     var ERR_BAD_SID_REQ = '5';
@@ -238,12 +241,16 @@ $(document).ready(function() {
             // we have a session id, execute command
             $('#' + htmlId).load(commandPath + '/' + sid, function(){
                 if ($('#' + htmlId).text().substr(0, 3) == 'err'){
-                    var errorCode = $('#' + htmlId).text()[5];
+                    var errorCode = $('#' + htmlId).text()[4];
                     if (errorCode == ERR_SID_EXP){ // session id expired
                         sid = null;
                         getSID(function(){
                             sendCommand(htmlId, commandPath, onSuccess, onFailure);
                         });
+                    }
+                    else if (errorCode == ERR_BAD_CMD){
+                        // try again, request failed
+                        sendCommand(htmlId, commandPath, onSuccess, onFailure);
                     }
                     else {
                         $('#error').show();

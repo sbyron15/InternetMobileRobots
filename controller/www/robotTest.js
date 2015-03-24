@@ -13,11 +13,11 @@ $(document).ready(function() {
             squareSum += results[i] * results[i];        
         }
         mean = sum * 1.0 / results.length;
-        variance = (squareSum + (sum * sum * 1.0 / results.length)) / (results.length - 1);
+        variance = (squareSum - (sum * sum * 1.0 / results.length)) / (results.length - 1);
         sd = Math.sqrt(variance);
         error = 1.96 * sd / Math.sqrt(results.length);
 
-        $('#latency-mean').text(mean.toFixed(PRECISION) + ' ± ' + error.toFixed(PRECISION) + ' with 95% confidence');
+        $('#latency-mean').text(mean.toFixed(PRECISION) + ' +/- ' + error.toFixed(PRECISION) + ' with 95% confidence');
         $('#latency-median').text(results[results.length / 2].toFixed(PRECISION));
         $('#latency-sd').text(sd.toFixed(PRECISION));
         $('#latency-raw').text(allResults);
