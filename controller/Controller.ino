@@ -116,6 +116,7 @@ void loop()
     if (sid != -1 && (millis() - session_set_time > SESSION_TIMEOUT)) {
       log("Session expired");
       sid = -1;
+      session_set_time = 0;
     }
 
     if (command.length() == 0) { // occasionally receiving blank requests
@@ -129,6 +130,7 @@ void loop()
       log("Received command: " + command);
       if (sid == -1) {
         sid = random(0x7FFFFFFFL);
+        session_set_time = millis();
         client.print(String(sid));
       }
       else {
@@ -171,6 +173,7 @@ void loop()
         else if (command == LOGOUT){
           sid = -1;
           session_set_time = 0;
+          client.print("Logged out");
         } 
         else {
           // process any speed commands
