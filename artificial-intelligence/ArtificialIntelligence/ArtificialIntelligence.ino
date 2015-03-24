@@ -181,7 +181,7 @@ void remoteControlMode() {
     unStop();
     log("RC: Go");
   }
-  delay(400);
+  delay(200);
 }
 
 void lineFollowingMode() {
