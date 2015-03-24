@@ -60,7 +60,7 @@ unsigned long millis_time_set = 0; // indicates how long (in ms) the system was 
 const char* LOG_PATH = "/mnt/sd/arduino/www/controller/log.txt";
 
 const int forwardStopPin = 2;
-const int backwardStopPin = 12;
+const int backwardStopPin = 3;
 
 void setup()
 {
