@@ -60,7 +60,7 @@ unsigned long millis_time_set = 0; // indicates how long (in ms) the system was 
 const char* LOG_PATH = "/mnt/sd/arduino/www/controller/log.txt";
 
 const int forwardStopPin = 2;
-const int backwardStopPin = 3;
+const int backwardStopPin = 12;
 
 void setup()
 {
@@ -266,17 +266,17 @@ bool processSpeedCommand(String command, YunClient client) {
     replayLastDirection();
 
   } else if (command == FAST) {
-    speed = 200;
+    speed = 255;
     printSpeed = true;
     replayLastDirection();
 
   } else if (command == SLOW) {
-    speed = 140;
+    speed = 170;
     printSpeed = true;
     replayLastDirection();
 
   } else if (command == MEDIUM) {
-    speed = 170;
+    speed = 200;
     printSpeed = true;
     replayLastDirection();
 
@@ -315,7 +315,7 @@ void backward() {
   analogWrite(B1M1, speed + 55);
   analogWrite(B1M2, 0);
   // Motor Controller 2 Backwards
-  analogWrite(B2M1, speed - 55);
+  analogWrite(B2M1, speed);
   analogWrite(B2M2, 0);
 
   lastCommand = BACKWARD;
@@ -337,7 +337,7 @@ void forward() {
   analogWrite(B1M2, speed + 55);
   // Motor Controller 2 Forwards
   analogWrite(B2M1, 0);
-  analogWrite(B2M2, speed - 55);
+  analogWrite(B2M2, speed);
 
   lastCommand = FORWARD;
 }

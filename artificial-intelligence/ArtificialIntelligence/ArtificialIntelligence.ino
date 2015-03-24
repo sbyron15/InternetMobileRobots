@@ -179,7 +179,6 @@ void remoteControlMode() {
     log("RC: B Stop");
   } else {
     unStop();
-    log("RC: Go");
   }
   delay(200);
 }
@@ -397,8 +396,8 @@ void forwardStop() {
 
 void backwardStop() {
   lastCommand = STOP;
-  digitalWrite(forwardStopPin, HIGH);
-  digitalWrite(backwardStopPin, LOW);
+  digitalWrite(forwardStopPin, LOW);
+  digitalWrite(backwardStopPin, HIGH);
 }
 
 void unStop() {
