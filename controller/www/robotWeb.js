@@ -274,8 +274,14 @@ $(document).ready(function() {
         // attempt to get SID
         $('#sid').load('/arduino/getSID', function(){
             if ($('#sid').text().substr(0, 3) == 'err'){ // another session is in progress
-                sid = null;
-                onFailure();
+                var errorCode = $('#sid').text()[4];
+                if (error == ERR_BAD_CMD){
+                    getSID(onSuccess, onFailure);
+                }
+                else {
+                    sid = null;
+                    onFailure();
+                }
             }
             else { // sid received from robot
                 sid = $('#sid').text();
