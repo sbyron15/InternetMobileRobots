@@ -16,18 +16,18 @@
 
     <body>
 
-        <center><a href="index.html">Remote Control Mode</a> - Line Following Mode - <a href="followGreen.html">Follow Green Mode</a> - <a href="aiMode.html">AI Mode</a></center>
+        <center><a href="index.html">Remote Control Mode</a> - <a href="followLine.html">Line Following Mode</a> - <a href="followGreen.html">Follow Green Mode</a> - AI Mode</center>
 
         <noscript>
             <p>Javascript must be enabled for proper functionality.</p>
         </noscript>
 
-        <h3>Line Following Mode</h3>
+        <h3>AI Mode</h3>
         <div id='robot-feed'>
             <img src="http://arduino2.local:8080/?action=stream" width="320" height="240" />
         </div>
 
-        <button id='start' onclick="start();">Start Following Line</button>
+        <button id='start' onclick="start();">Start AI Mode</button>
         <button id='stop' onclick="stop();">Stop</button>
 
         <p id='msg'></p>
