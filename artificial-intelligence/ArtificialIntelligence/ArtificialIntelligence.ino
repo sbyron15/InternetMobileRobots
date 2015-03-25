@@ -53,7 +53,7 @@ const int backDistance = 20;
 const int leftDistance = 10;
 const int rightDistance = 10;
 
-String arduino1Address = "http://192.168.0.15/arduino";
+String arduino1Address = "http://192.168.1.5/arduino";
 
 // Start off in remote control mode
 int mode = REMOTE_CONTROL;
