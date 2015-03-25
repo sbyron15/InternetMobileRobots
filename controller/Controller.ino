@@ -44,7 +44,7 @@ const int ERR_BAD_CMD = 1; // malformed/unrecognized command
 const int ERR_NO_SID = 2; // no sid provided when needed
 const int ERR_BAD_SID = 3; // wrong sid provided
 const int ERR_SID_EXP = 4;  // sid expired, no session is in progress
-const int ERR_BAD_SID_REQ = 5; // getSID called, but unexpired sid alremilady exists
+const int ERR_BAD_SID_REQ = 5; // getSID called, but unexpired sid already exists
 
 const unsigned long SESSION_TIMEOUT = 60000; // session times out in one minute
 const long ADMIN_SID = 816845;
@@ -266,17 +266,17 @@ bool processSpeedCommand(String command, YunClient client) {
     replayLastDirection();
 
   } else if (command == FAST) {
-    speed = 255;
+    speed = 200;
     printSpeed = true;
     replayLastDirection();
 
   } else if (command == SLOW) {
-    speed = 170;
+    speed = 140;
     printSpeed = true;
     replayLastDirection();
 
   } else if (command == MEDIUM) {
-    speed = 200;
+    speed = 170;
     printSpeed = true;
     replayLastDirection();
 
@@ -315,7 +315,7 @@ void backward() {
   analogWrite(B1M1, speed + 55);
   analogWrite(B1M2, 0);
   // Motor Controller 2 Backwards
-  analogWrite(B2M1, speed);
+  analogWrite(B2M1, speed - 55);
   analogWrite(B2M2, 0);
 
   lastCommand = BACKWARD;
@@ -337,7 +337,7 @@ void forward() {
   analogWrite(B1M2, speed + 55);
   // Motor Controller 2 Forwards
   analogWrite(B2M1, 0);
-  analogWrite(B2M2, speed);
+  analogWrite(B2M2, speed - 55);
 
   lastCommand = FORWARD;
 }
