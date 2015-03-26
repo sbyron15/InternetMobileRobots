@@ -23,9 +23,12 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
+import android.widget.Spinner;
 import android.widget.TextView;
 import com.example.InternetMobileRobots.R;
 
@@ -35,12 +38,13 @@ public class MainActivity extends ActionBarActivity {
 		moveForward, moveBackward, leftTurn, rightTurn, stop, setSlowSpeed, setMediumSpeed, setFastSpeed;
 	}
 	
-	Button buttonUp;
-	Button buttonDown;
-	Button buttonLeft;
-	Button buttonRight;
-	SeekBar seekbar1;
-	TextView t1;
+	private static final String BOARD1 = "locationBoard1";
+	private static final String BOARD2 = "locationBoard2";
+	private Spinner modeSpinner;
+	private Button buttonUp, buttonDown, buttonLeft, buttonRight;
+	private SeekBar seekbar1;
+	private TextView t1;
+	private static final String RCMODE = "remoteControl";
 	
 	HttpClient httpClient;
 	String uri;
@@ -51,11 +55,52 @@ public class MainActivity extends ActionBarActivity {
 		setContentView(R.layout.activity_main);
 		addListenerOnButtons();
 		addSliderListener();
+		//addItemsOnSpinner();
+		addListenerOnSpinnerItemSelection();
 		httpClient = new DefaultHttpClient();
 		uri = "";
 		PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 		
 		
+	}
+	
+	//public void addItemsOnSpinner(){
+	//	modeSpinner = (Spinner) findViewById(R.id.spinner1);
+	//}
+	
+	public void addListenerOnSpinnerItemSelection(){
+		modeSpinner = (Spinner) findViewById(R.id.spinner1);
+		modeSpinner.setOnItemSelectedListener(new OnItemSelectedListener() {
+
+			@Override
+			public void onItemSelected(AdapterView<?> parent, View view,
+					int position, long id) {
+				// TODO Auto-generated method stub
+				String nextMode = parent.getItemAtPosition(position).toString();
+				Log.d("Behaviour", nextMode);
+				if(nextMode.equals(RCMODE)) {
+					buttonUp.setEnabled(true);
+					buttonDown.setEnabled(true);
+					buttonLeft.setEnabled(true); 
+					buttonRight.setEnabled(true);
+				} else{
+					buttonUp.setEnabled(false);
+					buttonDown.setEnabled(false);
+					buttonLeft.setEnabled(false); 
+					buttonRight.setEnabled(false);
+				}
+				new MyAsyncTask().execute(BOARD2,nextMode);
+				
+				
+				
+			}
+
+			@Override
+			public void onNothingSelected(AdapterView<?> parent) {
+				// TODO Auto-generated method stub
+				
+			}
+		});
 	}
 
 	@Override
@@ -95,13 +140,13 @@ public class MainActivity extends ActionBarActivity {
 			public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
 				switch(progress) {
 				
-					case 0: new MyAsyncTask().execute(Command.setSlowSpeed.toString());
+					case 0: new MyAsyncTask().execute(BOARD1,Command.setSlowSpeed.toString());
 							Log.d("speed", "Setting speed to Slow");
 							break;
-					case 1: new MyAsyncTask().execute(Command.setMediumSpeed.toString());
+					case 1: new MyAsyncTask().execute(BOARD1,Command.setMediumSpeed.toString());
 							Log.d("speed", "Setting speed to Medium");
 							break;
-					case 2: new MyAsyncTask().execute(Command.setFastSpeed.toString());
+					case 2: new MyAsyncTask().execute(BOARD1,Command.setFastSpeed.toString());
 							Log.d("speed", "Setting speed to Fast");
 							break;
 					default: break;
@@ -136,10 +181,10 @@ public class MainActivity extends ActionBarActivity {
 			public boolean onTouch(View v, MotionEvent event) {
 				if (event.getAction() == MotionEvent.ACTION_DOWN){
 					Log.d("Up Pressed", "Telling robot to start moving forward");
-					new MyAsyncTask().execute(Command.moveForward.toString());
+					new MyAsyncTask().execute(BOARD1,Command.moveForward.toString());
 				} else if(event.getAction() == MotionEvent.ACTION_UP){
 					Log.d("Up Released", "Telling robot to stop moving forward");
-					new MyAsyncTask().execute(Command.stop.toString());
+					new MyAsyncTask().execute(BOARD1,Command.stop.toString());
 				}
 				return false;
 			}
@@ -151,10 +196,10 @@ public class MainActivity extends ActionBarActivity {
 			public boolean onTouch(View v, MotionEvent event) {
 				if (event.getAction() == MotionEvent.ACTION_DOWN){
 					Log.d("Down Pressed", "Telling robot to start moving backwards");
-					new MyAsyncTask().execute(Command.moveBackward.toString());
+					new MyAsyncTask().execute(BOARD1,Command.moveBackward.toString());
 				} else if(event.getAction() == MotionEvent.ACTION_UP){
 					Log.d("Down Released", "Telling robot to stop moving backwards");
-					new MyAsyncTask().execute(Command.stop.toString());
+					new MyAsyncTask().execute(BOARD1,Command.stop.toString());
 				}
 				return false;
 			}
@@ -166,10 +211,10 @@ public class MainActivity extends ActionBarActivity {
 			public boolean onTouch(View v, MotionEvent event) {
 				if (event.getAction() == MotionEvent.ACTION_DOWN){
 					Log.d("Left Pressed", "Telling robot to start turning left");
-					new MyAsyncTask().execute(Command.leftTurn.toString());
+					new MyAsyncTask().execute(BOARD1,Command.leftTurn.toString());
 				} else if(event.getAction() == MotionEvent.ACTION_UP){
 					Log.d("Left Released", "Telling robot to stop turning left");
-					new MyAsyncTask().execute(Command.stop.toString());
+					new MyAsyncTask().execute(BOARD1,Command.stop.toString());
 				}
 				return false;
 			}
@@ -181,10 +226,10 @@ public class MainActivity extends ActionBarActivity {
 			public boolean onTouch(View v, MotionEvent event) {
 				if (event.getAction() == MotionEvent.ACTION_DOWN){
 					Log.d("Right Pressed", "Telling robot to start turning right");
-					new MyAsyncTask().execute(Command.rightTurn.toString());
+					new MyAsyncTask().execute(BOARD1,Command.rightTurn.toString());
 				} else if(event.getAction() == MotionEvent.ACTION_UP){
 					Log.d("Right Released", "Telling robot to stop turning right");
-					new MyAsyncTask().execute(Command.stop.toString());
+					new MyAsyncTask().execute(BOARD1,Command.stop.toString());
 				}
 				return false;
 			}
@@ -194,9 +239,9 @@ public class MainActivity extends ActionBarActivity {
 		
 	}
 	
-	private void sendRequest(String action){
+	private void sendRequest(String board, String action){
 		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-		String location = sharedPref.getString("location", "undefined");
+		String location = sharedPref.getString(board, "undefined");
 		uri = "http://" + location + "/arduino/" + action;
 		try {
 			HttpResponse response = httpClient.execute(new HttpGet(uri));
@@ -234,7 +279,7 @@ public class MainActivity extends ActionBarActivity {
 
 		@Override
 		protected Double doInBackground(String... params) {
-			sendRequest(params[0]);
+			sendRequest(params[0], params[1]);
 			return null;
 		}
 

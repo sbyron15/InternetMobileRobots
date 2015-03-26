@@ -1,5 +1,7 @@
 
     <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-        <EditTextPreference android:dialogTitle="@string/location" android:defaultValue="android.local" android:title="@string/location" android:key="location">
+        <EditTextPreference android:dialogTitle="@string/locationBoard1" android:defaultValue="android.local" android:title="@string/locationBoard1" android:key="locationBoard1">
+        </EditTextPreference>
+        <EditTextPreference android:dialogTitle="@string/locationBoard2" android:defaultValue="android.local" android:title="@string/locationBoard2" android:key="locationBoard2">
         </EditTextPreference>
     </PreferenceScreen>

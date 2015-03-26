@@ -8,6 +8,15 @@
     <string name="button_down">Backward</string>
     <string name="button_left">Left</string>
     <string name="button_right">Right</string>
-    <string name="location">Location</string>
+    <string name="locationBoard1">LocationBoard1</string>
+    <string name="locationBoard2">LocationBoard2</string>
+    <string name="Behaviour">Behaviour</string>
+    
+    <string-array name="behaviours">
+        <item>remoteControl</item>
+        <item>followLine</item>
+        <item>followGreen</item>
+        <item>aiMode1</item>
+    </string-array>
 
 </resources>
