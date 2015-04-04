@@ -9,7 +9,7 @@
 
     <body>
 
-        <center>Remote Control Mode - <a href="followLine.html">Line Following Mode</a> - <a href="followGreen.html">Follow Green Mode</a></center>
+        <center>Remote Control Mode - <a href="followLine.html">Line Following Mode</a> - <a href="followGreen.html">Follow Green Mode</a> - <a href="aiMode.html">AI Mode</a></center>
 
         <noscript>
             <p>Javascript must be enabled for proper functionality.</p>
@@ -29,7 +29,7 @@
                     <br />
                     <input type='range' id='speedControl' name='speedControl' min='0' max='3' value='0' />
                     <br />
-                    <span>Direction:</span>
+                    <label>Direction:</label>
                     
                     <table>          
                         <tr>
@@ -60,7 +60,7 @@
                     </table>
                 </div>
                 <div id='robot-feed'>
-                    <img src="http://arduino.local:8080/?action=stream" width="320" height="240" />
+                    <img src="http://arduino2.local:8080/?action=stream" width="320" height="240" />
                 </div>
 
                 <p id='instructions'>Keyboard Control also available. Use arrow keys or WASD for direction. Use 'X' or '&lt;' to slow down and 'C' or '&gt;' to speed up. Keyboard control may not work on some international keyboards.</p>

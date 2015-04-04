@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src='zepto.min.js' type='text/javascript'></script>
+        <script src='robotTest.js' type='text/javascript'></script>
+
+        <link rel='stylesheet' type='text/css' href='robotWeb.css' />
+    </head>
+
+    <body>
+        <noscript>
+            <p>Javascript must be enabled for proper functionality.</p>
+        </noscript>
+
+        <div class='test' id='latency'>
+            <h2>Latency Test</h2>
+            <label for='latency-number'>Number of requests to send (5 to 1000): </label>
+            <input id='latency-number' type='number' min='5' max='1000' value='100'/>
+
+            <br />
+            <button id='latency-run'>Run latency test</button>
+
+            <div id='latency-results'>
+                <h3>Results</h3>
+                <label for='latency-mean'>Mean (ms): </label>
+                <span id='latency-mean'></span>
+                <br />
+
+                <label for='latency-sd'>Standard Deviation (ms): </label>
+                <span id='latency-sd'></span>
+                <br />
+
+                <label for='latency-median'>Median (ms): </label>
+                <span id='latency-median'></span>
+                <br />
+
+                <label for='latency-raw'>Latency of each call (ms): </label>
+                <span id='latency-raw'></span>
+            </div>
+
+            <br />
+            <span id='latency-note' class='note'>Note: Due to difficulty in synchronizing clocks, the results reflect round-trip latency.<span>
+        </div>
+
+        <hr />
+
+        <div class='test' id='tp'>
+            <h2>Throughput Test</h2>
+            <label for='tp-number'>Number of requests to send (1 to 1000): </label>
+            <input id='tp-number' type='number' min='5' max='1000' value='100'/>
+            <br />
+
+            <label for='tp-timeout'>Maximum test time in minutes (1 to 10): </label>
+            <input id='tp-timeout' type='number' min='1' max='10' value='3'/>
+
+            <br />
+            <button id='tp-run'>Run throughput test</button>
+
+            <div id='tp-results'>
+                <h3>Results</h3>
+                <label for='tp-responses'>Number of responses received: </label>
+                <span id='tp-responses'></span>
+                <br />
+
+                <label for='tp-time'>Time until last response (s): </label>
+                <span id='tp-time'></span>
+                <br />
+
+                <label for='tp-tp'>Throughput (ms<sup>-1</sup>): </label>
+                <span id='tp-tp'></span>
+            </div>
+
+            <br />
+
+            <span id='tp-note' class='note'>Note: In very rare cases, the results may change shortly after first being displayed. This is due to the ascynchronous implementation, however, both sets of results should be accurate for the number of responses they report.<span>
+        </div>
+
+    </body>   
+</html>

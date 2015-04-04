@@ -20,6 +20,10 @@
     font-weight: bold;
 }
 
+.note {
+    font-size: small;
+}
+
 #robot-control {
     float: left;
     margin-right: 20px;

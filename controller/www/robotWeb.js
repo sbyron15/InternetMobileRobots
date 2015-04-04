@@ -1,7 +1,9 @@
 $(document).ready(function() {
     // Debug
     var DEBUG = true;
-    if (!DEBUG) $('#debug').hide();
+    if (!DEBUG) {
+        $('#debug').hide();
+    }
 
     // Constants
     var UP = 'up';
@@ -12,6 +14,9 @@ $(document).ready(function() {
     var MIN_SPEED = 0;
     var MAX_SPEED = 3;
     var UPDATE_DELAY = 5000;
+
+    var ERR_BAD_CMD = '1'; // Is returned when the request fails to send properly
+    var ERR_NO_SID = '2';  // theoretically shouldn't need this one in the web app
     var ERR_BAD_SID = '3';
     var ERR_SID_EXP = '4';
     var ERR_BAD_SID_REQ = '5';
@@ -43,11 +48,11 @@ $(document).ready(function() {
         $('#msg').text(e.keyCode + ' key pressed'); 
         
         var sc = $('#speedControl');
-        if (isSpeedUp(e.keyCode) && parseInt(sc.val()) < MAX_SPEED){
-            sc.val(parseInt(sc.val()) + 1);
+        if (isSpeedUp(e.keyCode) && parseInt(sc.val(), 10) < MAX_SPEED){
+            sc.val(parseInt(sc.val(), 10) + 1);
         }
         else if (isSlowDown(e.keyCode) && parseInt(sc.val()) > MIN_SPEED){
-            sc.val(parseInt(sc.val()) - 1);
+            sc.val(parseInt(sc.val(), 10) - 1);
         }
         else if (isLeft(e.keyCode)) sendDirection(LEFT);
         else if (isUp(e.keyCode)) sendDirection(UP);
@@ -115,7 +120,7 @@ $(document).ready(function() {
     // Speed change event
     $('#speedControl').on('change', function(){
         $('#msg').text('Setting speed to level ' + $(this).val()); 
-        switch (parseInt($(this).val())){
+        switch (parseInt($(this).val(), 10)){
             case 0: 
                 sendCommand('speed', '/arduino/stop');
                 break;
@@ -166,7 +171,10 @@ $(document).ready(function() {
             debugMsg = 'Stopping';
         }
 
-        sendCommand('direction', path, true);
+        sendCommand('direction', path, function(){
+            sending = false;
+            setDirection(translateDirection($('#direction').text()));
+        });
 
         $('#msg').text(debugMsg);
     }
@@ -220,39 +228,38 @@ $(document).ready(function() {
 
     // handles sending commands, including the session id
     function sendCommand(htmlId, commandPath){
-        sendCommand(htmlId, commandPath, false);
+        sendCommand(htmlId, commandPath, function(){}, function(){});
     }
 
-    function sendCommand(htmlId, commandPath, updateDirection){
+    function sendCommand(htmlId, commandPath, onSuccess, onFailure){
         if (sid == null){
             getSID(function(){
-                sendCommand(htmlId, commandPath, updateDirection);
+                sendCommand(htmlId, commandPath, onSuccess, onFailure);
             });
         }
         else { 
             // we have a session id, execute command
             $('#' + htmlId).load(commandPath + '/' + sid, function(){
-                if ($('#' + htmlId).text().slice(3) == 'err'){
-                    var errorCode = $('#' + htmlId).text()[5];
+                if ($('#' + htmlId).text().substr(0, 3) == 'err'){
+                    var errorCode = $('#' + htmlId).text()[4];
                     if (errorCode == ERR_SID_EXP){ // session id expired
                         sid = null;
                         getSID(function(){
-                            sendCommand(htmlId, commandPath, updateDirection);
+                            sendCommand(htmlId, commandPath, onSuccess, onFailure);
                         });
                     }
-                    else if (errorCode == ERR_BAD_SID){
+                    else if (errorCode == ERR_BAD_CMD){
+                        // try again, request failed
+                        sendCommand(htmlId, commandPath, onSuccess, onFailure);
+                    }
+                    else {
                         $('#error').show();
+                        onFailure();
                     }
                 }
                 else { //successful command
                     $('#error').hide();
-                    if (updateDirection){
-                        setDirection(translateDirection($('#direction').text()));
-                    }
-                }
-
-                if (updateDirection){
-                    sending = false;
+                    onSuccess();
                 }
             });
         }
@@ -266,9 +273,15 @@ $(document).ready(function() {
     function getSID(onSuccess, onFailure){
         // attempt to get SID
         $('#sid').load('/arduino/getSID', function(){
-            if ($('#sid').text().slice(5) == 'err=5'){ // another session is in progress
-                sid = null;
-                onFailure();
+            if ($('#sid').text().substr(0, 3) == 'err'){ // another session is in progress
+                var errorCode = $('#sid').text()[4];
+                if (error == ERR_BAD_CMD){
+                    getSID(onSuccess, onFailure);
+                }
+                else {
+                    sid = null;
+                    onFailure();
+                }
             }
             else { // sid received from robot
                 sid = $('#sid').text();
