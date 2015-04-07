@@ -45,6 +45,7 @@ public class MainActivity extends ActionBarActivity {
 	private SeekBar seekbar1;
 	private TextView t1;
 	private static final String RCMODE = "remoteControl";
+	private String SID;
 	
 	HttpClient httpClient;
 	String uri;
@@ -52,21 +53,21 @@ public class MainActivity extends ActionBarActivity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		SID = "default";
+		
+		
 		setContentView(R.layout.activity_main);
 		addListenerOnButtons();
 		addSliderListener();
-		//addItemsOnSpinner();
 		addListenerOnSpinnerItemSelection();
 		httpClient = new DefaultHttpClient();
 		uri = "";
+		new MyAsyncTask().execute(BOARD1,"getSID");
 		PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 		
 		
 	}
-	
-	//public void addItemsOnSpinner(){
-	//	modeSpinner = (Spinner) findViewById(R.id.spinner1);
-	//}
+
 	
 	public void addListenerOnSpinnerItemSelection(){
 		modeSpinner = (Spinner) findViewById(R.id.spinner1);
@@ -242,10 +243,17 @@ public class MainActivity extends ActionBarActivity {
 	private void sendRequest(String board, String action){
 		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
 		String location = sharedPref.getString(board, "undefined");
-		uri = "http://" + location + "/arduino/" + action;
+		if(SID.equals("default")){
+			uri = "http://" + location + "/arduino/" + action;
+			Log.d("http request", uri);
+		}else {
+			uri = "http://" + location + "/arduino/" + action + "/" + SID;
+		}
 		try {
+			Log.d("http request", uri);
 			HttpResponse response = httpClient.execute(new HttpGet(uri));
 			Log.d("http response:", response.toString());
+			
 			if(response.getStatusLine().getStatusCode() == 200){
 				HttpEntity entity = response.getEntity();
 				StringBuilder sb = new StringBuilder();
@@ -259,12 +267,15 @@ public class MainActivity extends ActionBarActivity {
 				catch (IOException e) { e.printStackTrace();}
 				catch (Exception e) { e.printStackTrace(); }
 				final String a = sb.toString();
-				
+				if(action.equals("getSID")){
+					SID = a.toString();
+				}
 				runOnUiThread(new Runnable() {
 				     @Override
 				     public void run() {
 
 				    	 t1.setText(a.toString());
+				    	 
 				    }
 				});
 			}
